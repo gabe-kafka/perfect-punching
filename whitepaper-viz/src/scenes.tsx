@@ -33,7 +33,7 @@ const s = (v: number) => v * SCALE;
  * dimension labels track the angle of their dim line.
  */
 function MathLabel({
-  position, tex, fontSize = 11, color = INK, alignTo,
+  position, tex, fontSize = 22, color = INK, alignTo,
 }: {
   position: [number, number, number];
   tex: string;
@@ -87,7 +87,7 @@ function MathLabel({
 }
 
 function TagLabel({
-  position, text, fontSize = 9, color = MUTED,
+  position, text, fontSize = 18, color = MUTED,
 }: {
   position: [number, number, number];
   text: string;
@@ -130,7 +130,7 @@ function TagLabel({
  */
 function Dim({
   a, b, offset, label,
-  fontSize = 11,
+  fontSize = 22,
   tickSize = 0.055,
   gap = 0.015,
   overrun = 0.04,
@@ -211,9 +211,9 @@ function Leader({
         <meshBasicMaterial color={DIMCOL} />
       </mesh>
       {isTex ? (
-        <MathLabel position={labelPos} tex={label} fontSize={11} />
+        <MathLabel position={labelPos} tex={label} fontSize={22} />
       ) : (
-        <TagLabel position={labelPos} text={label} fontSize={9} color={DIMCOL} />
+        <TagLabel position={labelPos} text={label} fontSize={18} color={DIMCOL} />
       )}
     </group>
   );
@@ -346,7 +346,9 @@ function MomentVector({
   const headA = headBase.clone().add(radial.clone().multiplyScalar(headHalf));
   const headB = headBase.clone().sub(radial.clone().multiplyScalar(headHalf));
 
-  const labelPos = center.clone().add(u.clone().multiplyScalar(radius + 0.45));
+  // Place M_u label at the centroid of the curl so it reads as
+  // "this circled symbol = M_u".
+  const labelPos = center.clone();
 
   return (
     <group>
@@ -355,7 +357,7 @@ function MomentVector({
       {label && (
         <MathLabel
           position={[labelPos.x, labelPos.y, labelPos.z]}
-          tex="M_u" color={RED} fontSize={13}
+          tex="M_u" color={RED} fontSize={26}
         />
       )}
     </group>
@@ -562,7 +564,7 @@ export function HeroScene(props: SceneProps) {
         offset={[0, -0.12, 0]}
         label="\\tfrac{d}{2}"
         tickSize={0.035}
-        fontSize={10}
+        fontSize={20}
       />
 
       {/* ---- elevation dimensions (vertical, at front-right slab edge) ---- */}
@@ -584,7 +586,7 @@ export function HeroScene(props: SceneProps) {
         offset={[0.64, 0, 0]}
         label="\\text{cover}"
         tickSize={0.035}
-        fontSize={10}
+        fontSize={20}
       />
 
       {/* ---- callouts ---- */}
