@@ -267,7 +267,7 @@ function Slab({ geom }: { geom: Geometry }) {
     <WireBox
       x1={-S} x2={+S} y1={-S} y2={+S}
       z1={-s(geom.h)} z2={0}
-      color={INK} lw={1.0}
+      color={INK} lw={2.0}
     />
   );
 }
@@ -280,7 +280,7 @@ function CriticalSection({ geom, dashed = true }: { geom: Geometry; dashed?: boo
     <WireBox
       x1={-hb1} x2={+hb1} y1={-hb2} y2={+hb2}
       z1={-s(geom.d)} z2={0}
-      color={INK} lw={1.2} dashed={dashed}
+      color={INK} lw={2.4} dashed={dashed}
     />
   );
 }
@@ -295,7 +295,7 @@ function Column({ geom }: { geom: Geometry }) {
     <WireBox
       x1={-hc1} x2={+hc1} y1={-hc2} y2={+hc2}
       z1={bot} z2={top}
-      color={INK} lw={1.1}
+      color={INK} lw={2.2}
     />
   );
 }
