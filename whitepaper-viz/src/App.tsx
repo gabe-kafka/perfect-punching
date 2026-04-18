@@ -7,8 +7,8 @@ import type { Geometry } from "./math";
 const GEOM: Geometry = { c1: 12, c2: 24, h: 8, d: 7 };
 
 export default function App() {
-  const [vuKip, setVuKip] = useState(120);
-  const [muKipFt, setMuKipFt] = useState(100);
+  const [vuKip, setVuKip] = useState(10);
+  const [muKipFt, setMuKipFt] = useState(15);
   const [thetaDeg, setThetaDeg] = useState(0);
 
   // unit conversions passed into scenes

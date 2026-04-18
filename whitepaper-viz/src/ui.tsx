@@ -25,15 +25,15 @@ export function Controls({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 p-4 border border-ink bg-paper">
       <Slider
         label={<><Tex>V_u</Tex> &nbsp; (kip)</>}
-        value={vuKip} min={0} max={300} step={1}
+        value={vuKip} min={0} max={20} step={0.1}
         onChange={(v) => onChange({ vuKip: v })}
-        display={`${vuKip.toFixed(0)}`}
+        display={`${vuKip.toFixed(1)}`}
       />
       <Slider
         label={<><Tex>{"|M_u|"}</Tex> &nbsp; (kip·ft)</>}
-        value={muKipFt} min={0} max={250} step={1}
+        value={muKipFt} min={0} max={30} step={0.1}
         onChange={(v) => onChange({ muKipFt: v })}
-        display={`${muKipFt.toFixed(0)}`}
+        display={`${muKipFt.toFixed(1)}`}
       />
       <Slider
         label={<><Tex>{"\\theta_{M_u}"}</Tex> &nbsp; (degrees, theta)</>}
