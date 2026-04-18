@@ -312,8 +312,12 @@ function MomentVector({
 }) {
   if (mu <= 0) return null;
 
-  const u = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0);
-  const v = new THREE.Vector3(-Math.sin(theta), Math.cos(theta), 0);
+  // theta = direction of the moment span in the slab plane (along +x at θ=0).
+  // By right-hand rule the moment VECTOR is perpendicular to the span:
+  //   u = moment-vector axis (thumb)
+  //   v = span direction (lies in the curl plane along with +z)
+  const u = new THREE.Vector3(-Math.sin(theta), Math.cos(theta), 0);
+  const v = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0);
   const w = new THREE.Vector3(0, 0, 1);
   const center = new THREE.Vector3(0, 0, centerZ);
 
