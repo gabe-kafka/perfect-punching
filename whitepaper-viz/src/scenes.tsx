@@ -9,13 +9,22 @@ import {
   type Geometry,
 } from "./math";
 
-/* ----------- palette (style guide) ----------- */
+/* ----------- palette ------------------------------------------------
+ * CAD drawings per MIL-STD / ASME Y14.2: monochrome. Hierarchy via
+ * line WEIGHT, never color. The surrounding UI keeps the Bloomberg
+ * palette (see tailwind.config.ts); only the 3D scene is monochrome.
+ * ------------------------------------------------------------------- */
 const INK    = "#1A1A1A";
-const MUTED  = "#6B6B6B";
-const DIMCOL = "#505050";
+const MUTED  = INK;   // TagLabel text — still black, still readable
+const DIMCOL = INK;   // dim / extension / leader lines
 const BORDER = "#D4D4D4";
-const RED    = "#DC2626";
+const RED    = INK;   // former M_u red — now monochrome
 const BG     = "#FFFFFF";
+
+/* Line weights (ASME Y14.2 thick:medium:thin = 4:2:1) */
+const LW_THICK  = 2.4;   // visible object edges (slab, column)
+const LW_MEDIUM = 1.2;   // hidden-style (critical section), annotation curves
+const LW_THIN   = 0.6;   // dimension / extension / leader / tick
 
 /* ----------- scale ----------- */
 const SCALE        = 0.08;   // render units per inch
@@ -130,8 +139,8 @@ function Dim({
   a, b, offset, label,
   fontSize = 22,
   tickSize = 0.055,
-  gap = 0.015,
-  overrun = 0.04,
+  gap = 0.04,        // 1.5 mm spirit — extension line never touches object
+  overrun = 0.06,    // extension line overshoots dim line slightly
 }: {
   a: [number, number, number];
   b: [number, number, number];
@@ -170,11 +179,11 @@ function Dim({
 
   return (
     <group>
-      <Line points={[ext1a, ext1b]} color={DIMCOL} lineWidth={0.7} />
-      <Line points={[ext2a, ext2b]} color={DIMCOL} lineWidth={0.7} />
-      <Line points={[dim1, dim2]}   color={DIMCOL} lineWidth={0.9} />
-      <Line points={[t1a, t1b]}     color={INK}    lineWidth={1.2} />
-      <Line points={[t2a, t2b]}     color={INK}    lineWidth={1.2} />
+      <Line points={[ext1a, ext1b]} color={INK} lineWidth={LW_THIN} />
+      <Line points={[ext2a, ext2b]} color={INK} lineWidth={LW_THIN} />
+      <Line points={[dim1, dim2]}   color={INK} lineWidth={LW_THIN} />
+      <Line points={[t1a, t1b]}     color={INK} lineWidth={LW_THIN} />
+      <Line points={[t2a, t2b]}     color={INK} lineWidth={LW_THIN} />
       <MathLabel
         position={[labelPos.x, labelPos.y, labelPos.z]}
         tex={label}
@@ -201,17 +210,17 @@ function Leader({
     <group>
       <Line
         points={[new THREE.Vector3(...anchor), new THREE.Vector3(...labelPos)]}
-        color={MUTED}
-        lineWidth={0.8}
+        color={INK}
+        lineWidth={LW_THIN}
       />
       <mesh position={anchor}>
         <sphereGeometry args={[0.022, 10, 10]} />
-        <meshBasicMaterial color={DIMCOL} />
+        <meshBasicMaterial color={INK} />
       </mesh>
       {isTex ? (
         <MathLabel position={labelPos} tex={label} fontSize={22} />
       ) : (
-        <TagLabel position={labelPos} text={label} fontSize={18} color={DIMCOL} />
+        <TagLabel position={labelPos} text={label} fontSize={18} color={INK} />
       )}
     </group>
   );
@@ -240,7 +249,7 @@ function WireBox({
     [x1,y2,z1, x1,y2,z2],
   ];
   const dashProps = dashed
-    ? { dashed: true as const, dashSize: 0.08, gapSize: 0.06 }
+    ? { dashed: true as const, dashSize: 0.12, gapSize: 0.04 }   // 3:1 per ASME Y14.2
     : {};
   return (
     <group>
@@ -267,12 +276,12 @@ function Slab({ geom }: { geom: Geometry }) {
     <WireBox
       x1={-S} x2={+S} y1={-S} y2={+S}
       z1={-s(geom.h)} z2={0}
-      color={INK} lw={2.0}
+      color={INK} lw={LW_THICK}
     />
   );
 }
 
-/** Critical-section shell — height = d (effective depth), not h. */
+/** Critical-section shell — height = d (effective depth), not h. Hidden-style. */
 function CriticalSection({ geom, dashed = true }: { geom: Geometry; dashed?: boolean }) {
   const hb1 = s(B1(geom)) / 2;
   const hb2 = s(B2(geom)) / 2;
@@ -280,7 +289,7 @@ function CriticalSection({ geom, dashed = true }: { geom: Geometry; dashed?: boo
     <WireBox
       x1={-hb1} x2={+hb1} y1={-hb2} y2={+hb2}
       z1={-s(geom.d)} z2={0}
-      color={INK} lw={2.4} dashed={dashed}
+      color={INK} lw={LW_MEDIUM} dashed={dashed}
     />
   );
 }
@@ -295,7 +304,7 @@ function Column({ geom }: { geom: Geometry }) {
     <WireBox
       x1={-hc1} x2={+hc1} y1={-hc2} y2={+hc2}
       z1={bot} z2={top}
-      color={INK} lw={2.2}
+      color={INK} lw={LW_THICK}
     />
   );
 }
@@ -355,12 +364,12 @@ function MomentVector({
 
   return (
     <group>
-      <Line points={points} color={RED} lineWidth={2.4} />
-      <Line points={[headA, tip, headB]} color={RED} lineWidth={2.4} />
+      <Line points={points} color={INK} lineWidth={LW_MEDIUM} />
+      <Line points={[headA, tip, headB]} color={INK} lineWidth={LW_MEDIUM} />
       {label && (
         <MathLabel
           position={[labelPos.x, labelPos.y, labelPos.z]}
-          tex="M_u" color={RED} fontSize={26}
+          tex="M_u" color={INK} fontSize={26}
         />
       )}
     </group>
@@ -388,13 +397,13 @@ function StressArrow({
   const w = 0.035;
   return (
     <group>
-      <Line points={[tail, tip]} color={color} lineWidth={1.2} />
+      <Line points={[tail, tip]} color={color} lineWidth={LW_MEDIUM} />
       <Line points={[headBase.clone().add(new THREE.Vector3(+w, 0, 0)), tip,
                      headBase.clone().add(new THREE.Vector3(-w, 0, 0))]}
-            color={color} lineWidth={1.2} />
+            color={color} lineWidth={LW_MEDIUM} />
       <Line points={[headBase.clone().add(new THREE.Vector3(0, +w, 0)), tip,
                      headBase.clone().add(new THREE.Vector3(0, -w, 0))]}
-            color={color} lineWidth={1.2} />
+            color={color} lineWidth={LW_MEDIUM} />
     </group>
   );
 }
