@@ -321,7 +321,7 @@ function MomentVector({
   const w = new THREE.Vector3(0, 0, 1);
   const center = new THREE.Vector3(0, 0, centerZ);
 
-  const start = -Math.PI / 2 + Math.PI / 10;
+  const start = Math.PI / 2 + Math.PI / 10;  // rotated 180° from original
   const sweep = Math.PI * 1.72;
   const N = 48;
   const points: THREE.Vector3[] = [];
