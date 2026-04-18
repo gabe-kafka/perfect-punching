@@ -58,9 +58,7 @@ function MathLabel({
     const bP = B.clone().project(camera);
     const dx = (bP.x - aP.x) * size.width / 2;
     const dy = -(bP.y - aP.y) * size.height / 2;
-    let t = Math.atan2(dy, dx);
-    if (t > Math.PI / 2) t -= Math.PI;
-    else if (t < -Math.PI / 2) t += Math.PI;
+    const t = Math.atan2(dy, dx);
     innerRef.current.style.transform = `rotate(${t}rad)`;
   });
 
