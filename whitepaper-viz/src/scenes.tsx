@@ -560,7 +560,7 @@ export function HeroScene(props: SceneProps) {
         a={[+hc1, 0, 0]}
         b={[+hb1, 0, 0]}
         offset={[0, -0.12, 0]}
-        label="\\tfrac{d}{2}"
+        label="d/2"
         tickSize={0.035}
         fontSize={20}
       />
