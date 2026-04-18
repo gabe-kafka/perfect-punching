@@ -317,7 +317,8 @@ function MomentVector({
   //   u = moment-vector axis (thumb)
   //   v = span direction (lies in the curl plane along with +z)
   const u = new THREE.Vector3(-Math.sin(theta), Math.cos(theta), 0);
-  const v = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0);
+  // v flipped: mirrors the curl around the z-z axis (vertical line through center)
+  const v = new THREE.Vector3(-Math.cos(theta), -Math.sin(theta), 0);
   const w = new THREE.Vector3(0, 0, 1);
   const center = new THREE.Vector3(0, 0, centerZ);
 
