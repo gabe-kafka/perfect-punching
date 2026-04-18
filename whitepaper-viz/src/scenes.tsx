@@ -600,8 +600,8 @@ export function HeroScene(props: SceneProps) {
         label="critical section"
       />
       <Leader
-        anchor={[0, -hb2, 0]}
-        labelPos={[-hb1 - 1.2, -hb2 - 1.3, 0.4]}
+        anchor={[-hb1, -hb2, 0]}
+        labelPos={[-hb1 - 1.4, -hb2 - 1.2, 0.5]}
         label="b_0"
         isTex
       />
