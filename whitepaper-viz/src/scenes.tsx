@@ -8,6 +8,7 @@ import {
   perimeterSamples, stressAt,
   type Geometry,
 } from "./math";
+import { OccBox } from "./cad/OccBox";
 
 /* ----------- palette ------------------------------------------------
  * CAD drawings per MIL-STD / ASME Y14.2: monochrome. Hierarchy via
@@ -232,12 +233,12 @@ function Leader({
 
 function WireBox({
   x1, x2, y1, y2, z1, z2,
-  color = INK, lw = 1, dashed = false,
+  color = INK, lw = 1, dashed = false, depthTest = true,
 }: {
   x1: number; x2: number;
   y1: number; y2: number;
   z1: number; z2: number;
-  color?: string; lw?: number; dashed?: boolean;
+  color?: string; lw?: number; dashed?: boolean; depthTest?: boolean;
 }) {
   const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
   const top = [v(x1,y1,z2), v(x2,y1,z2), v(x2,y2,z2), v(x1,y2,z2), v(x1,y1,z2)];
@@ -253,13 +254,13 @@ function WireBox({
     : {};
   return (
     <group>
-      <Line points={top} color={color} lineWidth={lw} {...dashProps} />
-      <Line points={bot} color={color} lineWidth={lw} {...dashProps} />
+      <Line points={top} color={color} lineWidth={lw} depthTest={depthTest} {...dashProps} />
+      <Line points={bot} color={color} lineWidth={lw} depthTest={depthTest} {...dashProps} />
       {vs.map((c, i) => (
         <Line
           key={i}
           points={[v(c[0],c[1],c[2]), v(c[3],c[4],c[5])]}
-          color={color} lineWidth={lw} {...dashProps}
+          color={color} lineWidth={lw} depthTest={depthTest} {...dashProps}
         />
       ))}
     </group>
@@ -273,10 +274,10 @@ function WireBox({
 function Slab({ geom }: { geom: Geometry }) {
   const S = s(Math.max(B1(geom), B2(geom))) * 1.35;
   return (
-    <WireBox
+    <OccBox
       x1={-S} x2={+S} y1={-S} y2={+S}
       z1={-s(geom.h)} z2={0}
-      color={INK} lw={LW_THICK}
+      edgeColor={INK}
     />
   );
 }
@@ -290,6 +291,7 @@ function CriticalSection({ geom, dashed = true }: { geom: Geometry; dashed?: boo
       x1={-hb1} x2={+hb1} y1={-hb2} y2={+hb2}
       z1={-s(geom.d)} z2={0}
       color={INK} lw={LW_MEDIUM} dashed={dashed}
+      depthTest={false}
     />
   );
 }
@@ -301,10 +303,10 @@ function Column({ geom }: { geom: Geometry }) {
   const top = 0;
   const bot = -s(geom.h) - 1.6;
   return (
-    <WireBox
+    <OccBox
       x1={-hc1} x2={+hc1} y1={-hc2} y2={+hc2}
       z1={bot} z2={top}
-      color={INK} lw={LW_THICK}
+      edgeColor={INK}
     />
   );
 }
