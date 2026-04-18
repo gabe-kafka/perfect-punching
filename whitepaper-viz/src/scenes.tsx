@@ -502,7 +502,6 @@ export function HeroScene(props: SceneProps) {
   const hb2 = s(B2(g)) / 2;
   const hh  = s(g.h);
   const hd  = s(g.d);
-  const cover = g.h - g.d;
 
   // offsets for dim lines (render units)
   const planOffsetA = 0.26;  // inner (c_1, c_2)
@@ -521,13 +520,13 @@ export function HeroScene(props: SceneProps) {
         a={[-hc1, -hc2, 0]}
         b={[+hc1, -hc2, 0]}
         offset={[0, -planOffsetA, 0]}
-        label={`c_1 = ${g.c1.toFixed(0)}''`}
+        label="c_1"
       />
       <Dim
         a={[-hb1, -hb2, 0]}
         b={[+hb1, -hb2, 0]}
         offset={[0, -planOffsetB, 0]}
-        label={`b_1 = c_1 + d = ${B1(g).toFixed(2)}''`}
+        label="b_1"
       />
 
       {/* ---- plan dimensions (in +x direction) ---- */}
@@ -535,13 +534,13 @@ export function HeroScene(props: SceneProps) {
         a={[+hc1, -hc2, 0]}
         b={[+hc1, +hc2, 0]}
         offset={[+planOffsetA, 0, 0]}
-        label={`c_2 = ${g.c2.toFixed(0)}''`}
+        label="c_2"
       />
       <Dim
         a={[+hb1, -hb2, 0]}
         b={[+hb1, +hb2, 0]}
         offset={[+planOffsetB, 0, 0]}
-        label={`b_2 = c_2 + d = ${B2(g).toFixed(2)}''`}
+        label="b_2"
       />
 
       {/* ---- d/2 offset: between column face and critical section face ---- */}
@@ -549,32 +548,29 @@ export function HeroScene(props: SceneProps) {
         a={[+hc1, 0, 0]}
         b={[+hb1, 0, 0]}
         offset={[0, -0.12, 0]}
-        label={`\\tfrac{d}{2} = ${(g.d / 2).toFixed(2)}''`}
+        label="\\tfrac{d}{2}"
         tickSize={0.035}
         fontSize={10}
       />
 
       {/* ---- elevation dimensions (vertical, at front-right slab edge) ---- */}
-      {/* h: full slab thickness */}
       <Dim
         a={[+hb1 + elevOffset, -s(Math.max(B1(g), B2(g))) * 1.35, 0]}
         b={[+hb1 + elevOffset, -s(Math.max(B1(g), B2(g))) * 1.35, -hh]}
         offset={[0.30, 0, 0]}
-        label={`h = ${g.h.toFixed(0)}''`}
+        label="h"
       />
-      {/* d: effective depth */}
       <Dim
         a={[+hb1 + elevOffset, -s(Math.max(B1(g), B2(g))) * 1.35, 0]}
         b={[+hb1 + elevOffset, -s(Math.max(B1(g), B2(g))) * 1.35, -hd]}
         offset={[0.64, 0, 0]}
-        label={`d = h - 1'' = ${g.d.toFixed(2)}''`}
+        label="d"
       />
-      {/* cover: bottom 1" */}
       <Dim
         a={[+hb1 + elevOffset, -s(Math.max(B1(g), B2(g))) * 1.35, -hd]}
         b={[+hb1 + elevOffset, -s(Math.max(B1(g), B2(g))) * 1.35, -hh]}
         offset={[0.64, 0, 0]}
-        label={`\\text{cover} = ${cover.toFixed(2)}''`}
+        label="\\text{cover}"
         tickSize={0.035}
         fontSize={10}
       />
@@ -583,18 +579,13 @@ export function HeroScene(props: SceneProps) {
       <Leader
         anchor={[-hb1, +hb2 * 0.4, 0]}
         labelPos={[-hb1 - 1.0, +hb2 + 0.7, 0.4]}
-        label="critical section · offset d/2"
+        label="critical section"
       />
       <Leader
         anchor={[0, -hb2, 0]}
         labelPos={[-hb1 - 1.2, -hb2 - 1.3, 0.4]}
-        label={`b_0 = 2(b_1 + b_2) = ${b0(g).toFixed(1)}''`}
+        label="b_0"
         isTex
-      />
-      <Leader
-        anchor={[+hb1, -s(Math.max(B1(g), B2(g))) * 1.35, -hd]}
-        labelPos={[+hb1 + 1.8, -s(Math.max(B1(g), B2(g))) * 1.35 + 0.1, -hd - 0.2]}
-        label="1″ cover (typ)"
       />
     </SceneFrame>
   );
