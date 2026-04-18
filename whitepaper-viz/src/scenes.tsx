@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { useMemo, useRef, useState } from "react";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Line, OrbitControls, OrthographicCamera, Html } from "@react-three/drei";
 import * as THREE from "three";
 import katex from "katex";
@@ -42,29 +42,32 @@ function MathLabel({
   alignTo?: [THREE.Vector3, THREE.Vector3];
 }) {
   const { camera, size } = useThree();
+  const innerRef = useRef<HTMLDivElement>(null);
 
   const html = useMemo(
     () => katex.renderToString(tex, { throwOnError: false, displayMode: false }),
     [tex],
   );
 
-  let rotationRad = 0;
-  if (alignTo) {
+  // Re-compute the screen angle every frame so labels track a live camera
+  // (orbit, zoom). Mutates the DOM transform directly — no React re-render.
+  useFrame(() => {
+    if (!alignTo || !innerRef.current) return;
     const [A, B] = alignTo;
-    const aProj = A.clone().project(camera);
-    const bProj = B.clone().project(camera);
-    const dx = (bProj.x - aProj.x) * size.width / 2;
-    const dy = -(bProj.y - aProj.y) * size.height / 2;   // flip for CSS y-down
+    const aP = A.clone().project(camera);
+    const bP = B.clone().project(camera);
+    const dx = (bP.x - aP.x) * size.width / 2;
+    const dy = -(bP.y - aP.y) * size.height / 2;
     let t = Math.atan2(dy, dx);
-    // Keep text readable — never rotate past ±90°.
     if (t > Math.PI / 2) t -= Math.PI;
     else if (t < -Math.PI / 2) t += Math.PI;
-    rotationRad = t;
-  }
+    innerRef.current.style.transform = `rotate(${t}rad)`;
+  });
 
   return (
     <Html position={position} center zIndexRange={[100, 0]}>
       <div
+        ref={innerRef}
         style={{
           color,
           fontSize: `${fontSize}px`,
@@ -73,7 +76,7 @@ function MathLabel({
           whiteSpace: "nowrap",
           userSelect: "none",
           lineHeight: 1,
-          transform: `rotate(${rotationRad}rad)`,
+          transform: "rotate(0rad)",
           transformOrigin: "center",
           display: "inline-block",
         }}
@@ -423,12 +426,13 @@ function StressArrows({
 
 function SceneFrame({
   children, height = 380, zoom: initialZoom = 80,
-  cameraPosition = [5, -8, 5.5],
+  cameraPosition = [5, -8, 5.5], rotate = false,
 }: {
   children: React.ReactNode;
   height?: number;
   zoom?: number;
   cameraPosition?: [number, number, number];
+  rotate?: boolean;
 }) {
   const [zoom, setZoom] = useState(initialZoom);
   const bumpIn  = () => setZoom((z) => Math.min(z * 1.2, 600));
@@ -450,8 +454,10 @@ function SceneFrame({
         <OrbitControls
           makeDefault
           enablePan={false}
-          enableRotate={false}
+          enableRotate={rotate}
           enableZoom={false}
+          minPolarAngle={rotate ? 0.05 : undefined}
+          maxPolarAngle={rotate ? Math.PI / 2 - 0.05 : undefined}
         />
         <ambientLight intensity={0.95} />
         {children}
@@ -462,6 +468,12 @@ function SceneFrame({
         <ZoomBtn onClick={reset}   label="⌂" title="reset zoom" />
         <ZoomBtn onClick={bumpOut} label="−" />
       </div>
+
+      {rotate && (
+        <div className="absolute bottom-2 left-2 text-[9px] uppercase tracking-[0.18em] text-muted select-none">
+          drag to orbit · plate stays level
+        </div>
+      )}
     </div>
   );
 }
@@ -509,7 +521,7 @@ export function HeroScene(props: SceneProps) {
   const elevOffset  = 0.30;  // beyond slab edge for vertical dims
 
   return (
-    <SceneFrame height={560} zoom={70} cameraPosition={[6, -9, 6]}>
+    <SceneFrame height={560} zoom={70} cameraPosition={[6, -9, 6]} rotate>
       <Slab geom={g} />
       <CriticalSection geom={g} />
       <Column geom={g} />
