@@ -1,0 +1,48 @@
+# dependencies (root and any nested packages)
+node_modules/
+.pnp
+.pnp.*
+
+# build output
+dist/
+build/
+out/
+
+# vercel
+.vercel
+
+# python (figures/*.py)
+__pycache__/
+*.pyc
+
+# latex build products
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# typescript
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+
+# editors
+.idea/
+.vscode/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+*.pem
