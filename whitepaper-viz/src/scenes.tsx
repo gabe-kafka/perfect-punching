@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { Line, OrbitControls, OrthographicCamera, Html } from "@react-three/drei";
 import * as THREE from "three";
 import katex from "katex";
@@ -26,30 +26,56 @@ const s = (v: number) => v * SCALE;
 /* Label helpers (drei <Html> overlays, KaTeX for math)                */
 /* ================================================================== */
 
+/**
+ * Math label rendered as a DOM overlay via drei <Html>.
+ * If `alignTo` is supplied, the label is rotated (in screen space) to match
+ * the on-screen angle of the 3D line from alignTo[0] to alignTo[1] — so
+ * dimension labels track the angle of their dim line.
+ */
 function MathLabel({
-  position, tex, fontSize = 11, color = INK, pad = true,
+  position, tex, fontSize = 11, color = INK, alignTo,
 }: {
   position: [number, number, number];
   tex: string;
   fontSize?: number;
   color?: string;
-  pad?: boolean;
+  alignTo?: [THREE.Vector3, THREE.Vector3];
 }) {
+  const { camera, size } = useThree();
+
   const html = useMemo(
     () => katex.renderToString(tex, { throwOnError: false, displayMode: false }),
     [tex],
   );
+
+  let rotationRad = 0;
+  if (alignTo) {
+    const [A, B] = alignTo;
+    const aProj = A.clone().project(camera);
+    const bProj = B.clone().project(camera);
+    const dx = (bProj.x - aProj.x) * size.width / 2;
+    const dy = -(bProj.y - aProj.y) * size.height / 2;   // flip for CSS y-down
+    let t = Math.atan2(dy, dx);
+    // Keep text readable — never rotate past ±90°.
+    if (t > Math.PI / 2) t -= Math.PI;
+    else if (t < -Math.PI / 2) t += Math.PI;
+    rotationRad = t;
+  }
+
   return (
     <Html position={position} center zIndexRange={[100, 0]}>
-      <span
+      <div
         style={{
           color,
           fontSize: `${fontSize}px`,
           fontFamily: '"JetBrains Mono", monospace',
           pointerEvents: "none",
           whiteSpace: "nowrap",
-          background: pad ? "rgba(255,255,255,0.92)" : "transparent",
-          padding: pad ? "1px 4px" : "0",
+          userSelect: "none",
+          lineHeight: 1,
+          transform: `rotate(${rotationRad}rad)`,
+          transformOrigin: "center",
+          display: "inline-block",
         }}
         dangerouslySetInnerHTML={{ __html: html }}
       />
@@ -76,8 +102,7 @@ function TagLabel({
           textTransform: "uppercase",
           pointerEvents: "none",
           whiteSpace: "nowrap",
-          background: "rgba(255,255,255,0.92)",
-          padding: "1px 4px",
+          userSelect: "none",
         }}
       >
         {text}
@@ -139,7 +164,8 @@ function Dim({
   const t2b = dim2.clone().sub(tickVec);
 
   const mid = dim1.clone().lerp(dim2, 0.5);
-  const labelPos = mid.clone().addScaledVector(perp, tickSize * 0.5);
+  // Offset label clear of the dim line (no background pad — rely on clearance).
+  const labelPos = mid.clone().addScaledVector(perp, tickSize * 2.2);
 
   return (
     <group>
@@ -152,6 +178,7 @@ function Dim({
         position={[labelPos.x, labelPos.y, labelPos.z]}
         tex={label}
         fontSize={fontSize}
+        alignTo={[dim1.clone(), dim2.clone()]}
       />
     </group>
   );
