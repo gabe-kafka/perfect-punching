@@ -578,14 +578,6 @@ export function HeroScene(props: SceneProps) {
         offset={[0.64, 0, 0]}
         label="d"
       />
-      <Dim
-        a={[+hb1 + elevOffset, -s(Math.max(B1(g), B2(g))) * 1.35, -hd]}
-        b={[+hb1 + elevOffset, -s(Math.max(B1(g), B2(g))) * 1.35, -hh]}
-        offset={[0.64, 0, 0]}
-        label="\\text{cover}"
-        tickSize={0.035}
-        fontSize={20}
-      />
 
       {/* ---- callouts ---- */}
       <Leader
