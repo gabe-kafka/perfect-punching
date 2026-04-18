@@ -377,6 +377,50 @@ function MomentVector({
 }
 
 /* ================================================================== */
+/* Axial (P_u) — straight downward arrow                                */
+/* ================================================================== */
+
+function AxialVector({
+  pu, startZ = 1.1, endZ = 0.08, label = true, fontSize = 22,
+}: {
+  pu: number; startZ?: number; endZ?: number; label?: boolean; fontSize?: number;
+}) {
+  if (pu <= 0) return null;
+  const tail = new THREE.Vector3(0, 0, startZ);
+  const tip  = new THREE.Vector3(0, 0, endZ);
+  const headLen = 0.16;
+  const w = 0.07;
+  const headBase = new THREE.Vector3(0, 0, endZ + headLen);
+  return (
+    <group>
+      <Line points={[tail, tip]} color={RED} lineWidth={LW_THICK} />
+      <Line
+        points={[
+          headBase.clone().add(new THREE.Vector3(+w, 0, 0)),
+          tip,
+          headBase.clone().add(new THREE.Vector3(-w, 0, 0)),
+        ]}
+        color={RED} lineWidth={LW_THICK}
+      />
+      <Line
+        points={[
+          headBase.clone().add(new THREE.Vector3(0, +w, 0)),
+          tip,
+          headBase.clone().add(new THREE.Vector3(0, -w, 0)),
+        ]}
+        color={RED} lineWidth={LW_THICK}
+      />
+      {label && (
+        <MathLabel
+          position={[0.35, 0, startZ + 0.05]}
+          tex="P_u" color={RED} fontSize={fontSize}
+        />
+      )}
+    </group>
+  );
+}
+
+/* ================================================================== */
 /* Stress arrows (triptych)                                             */
 /* ================================================================== */
 
@@ -618,9 +662,9 @@ export function HeroScene(props: SceneProps) {
 
 export function DecompositionTriptych(props: SceneProps) {
   const panels = [
-    { key: "direct", title: "(b) V_u alone",     vu: props.vu, mu: 0,        showMu: false },
-    { key: "moment", title: "(c) γ_v M_u alone", vu: 0,        mu: props.mu, showMu: true  },
-    { key: "total",  title: "(d) V_u + γ_v M_u", vu: props.vu, mu: props.mu, showMu: true  },
+    { key: "direct", title: "(b) P_u alone",      vu: props.vu, mu: 0,        showPu: true,  showMu: false },
+    { key: "moment", title: "(c) γ_v M_u alone",  vu: 0,        mu: props.mu, showPu: false, showMu: true  },
+    { key: "total",  title: "(d) P_u + γ_v M_u",  vu: props.vu, mu: props.mu, showPu: true,  showMu: true  },
   ];
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -629,10 +673,13 @@ export function DecompositionTriptych(props: SceneProps) {
           <SceneFrame height={280} zoom={70} cameraPosition={[5, -7, 4.5]}>
             <CriticalSection geom={props.geom} />
             <StressArrows geom={props.geom} vu={p.vu} mu={p.mu} theta={props.theta} />
+            {p.showPu && (
+              <AxialVector pu={p.vu} startZ={1.15} endZ={0.15} fontSize={20} />
+            )}
             {p.showMu && (
               <MomentVector
                 mu={p.mu} theta={props.theta}
-                centerZ={0.9} radius={0.4} label={false}
+                centerZ={0.9} radius={0.4} label
               />
             )}
           </SceneFrame>
