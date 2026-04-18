@@ -17,19 +17,19 @@ export default function App() {
   const theta = (thetaDeg * Math.PI) / 180;
 
   return (
-    <div className="max-w-[1240px] mx-auto px-6 py-6 space-y-6">
-      <header className="pb-4 border-b border-ink">
+    <div className="max-w-[1240px] mx-auto px-4 md:px-6 py-5 md:py-6 space-y-5 md:space-y-6">
+      <header className="pb-3 md:pb-4 border-b border-ink">
         <img
           src="/brand.png"
           alt="Gabriel Kafka"
-          className="h-[52px] w-auto object-contain mb-4 select-none"
+          className="h-10 md:h-[52px] w-auto max-w-full object-contain mb-3 md:mb-4 select-none"
           draggable={false}
         />
-        <div className="flex items-baseline gap-4">
+        <div className="flex flex-col md:flex-row md:items-baseline md:gap-4">
           <span className="text-[9px] uppercase tracking-[0.24em] text-muted">
             FIG-01 · Perfect Punching
           </span>
-          <h1 className="text-xl font-semibold tracking-tight">
+          <h1 className="text-base md:text-xl font-semibold tracking-tight">
             Hanson &amp; Hanson eccentric-shear decomposition
           </h1>
         </div>

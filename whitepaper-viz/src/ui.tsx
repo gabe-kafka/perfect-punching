@@ -133,7 +133,7 @@ export function Notation() {
       <div className="border-b border-border px-3 py-2 text-[9px] uppercase tracking-[0.18em] text-muted">
         Notation
       </div>
-      <table className="w-full text-[11px] font-mono leading-tight">
+      <table className="w-full text-[11px] font-mono leading-tight table-fixed">
         <tbody>
           <GroupRow title="Demand" />
           <DefRow sym="V_u" desc="factored shear demand transferred at the column" />

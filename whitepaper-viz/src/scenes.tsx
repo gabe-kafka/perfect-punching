@@ -454,7 +454,10 @@ function SceneFrame({
   const reset   = () => setZoom(initialZoom);
 
   return (
-    <div className="relative border border-ink" style={{ height }}>
+    <div
+      className="relative border border-ink"
+      style={{ height, touchAction: rotate ? "none" : "pan-y" }}
+    >
       <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
         <color attach="background" args={[BG]} />
         <OrthographicCamera
@@ -535,7 +538,7 @@ export function HeroScene(props: SceneProps) {
   const elevOffset  = 0.30;  // beyond slab edge for vertical dims
 
   return (
-    <SceneFrame height={560} zoom={70} cameraPosition={[6, -9, 6]} rotate>
+    <SceneFrame height={480} zoom={70} cameraPosition={[6, -9, 6]} rotate>
       <Slab geom={g} />
       <CriticalSection geom={g} />
       <Column geom={g} />
@@ -620,10 +623,10 @@ export function DecompositionTriptych(props: SceneProps) {
     { key: "total",  title: "(d) V_u + γ_v M_u", vu: props.vu, mu: props.mu, showMu: true  },
   ];
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
       {panels.map((p) => (
         <div key={p.key}>
-          <SceneFrame height={340} zoom={70} cameraPosition={[5, -7, 4.5]}>
+          <SceneFrame height={280} zoom={70} cameraPosition={[5, -7, 4.5]}>
             <CriticalSection geom={props.geom} />
             <StressArrows geom={props.geom} vu={p.vu} mu={p.mu} theta={props.theta} />
             {p.showMu && (
