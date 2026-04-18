@@ -18,7 +18,7 @@ const INK    = "#1A1A1A";
 const MUTED  = INK;   // TagLabel text — still black, still readable
 const DIMCOL = INK;   // dim / extension / leader lines
 const BORDER = "#D4D4D4";
-const RED    = INK;   // former M_u red — now monochrome
+const RED    = "#DC2626";  // applied loads only (forces and moments)
 const BG     = "#FFFFFF";
 
 /* Line weights (ASME Y14.2 thick:medium:thin = 4:2:1) */
@@ -364,12 +364,12 @@ function MomentVector({
 
   return (
     <group>
-      <Line points={points} color={INK} lineWidth={LW_MEDIUM} />
-      <Line points={[headA, tip, headB]} color={INK} lineWidth={LW_MEDIUM} />
+      <Line points={points} color={RED} lineWidth={LW_MEDIUM} />
+      <Line points={[headA, tip, headB]} color={RED} lineWidth={LW_MEDIUM} />
       {label && (
         <MathLabel
           position={[labelPos.x, labelPos.y, labelPos.z]}
-          tex="M_u" color={INK} fontSize={26}
+          tex="M_u" color={RED} fontSize={26}
         />
       )}
     </group>
@@ -381,7 +381,7 @@ function MomentVector({
 /* ================================================================== */
 
 function StressArrow({
-  origin, length, direction, color = INK,
+  origin, length, direction, color = RED,
 }: {
   origin: [number, number, number];
   length: number;
