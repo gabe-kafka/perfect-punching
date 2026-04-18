@@ -516,8 +516,8 @@ export function HeroScene(props: SceneProps) {
   const hd  = s(g.d);
 
   // offsets for dim lines (render units)
-  const planOffsetA = 0.26;  // inner (c_1, c_2)
-  const planOffsetB = 0.58;  // outer (b_1, b_2)
+  const planOffsetA = 0.70;  // inner (c_1, c_2)
+  const planOffsetB = 1.25;  // outer (b_1, b_2)
   const elevOffset  = 0.30;  // beyond slab edge for vertical dims
 
   return (
