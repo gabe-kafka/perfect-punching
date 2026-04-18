@@ -123,6 +123,82 @@ function Row({ label, value }: { label: React.ReactNode; value: React.ReactNode 
   );
 }
 
+/**
+ * Notation — a dense, always-visible variable glossary. Grouped by role.
+ * Every Greek letter named on first use.
+ */
+export function Notation() {
+  return (
+    <div className="border border-ink bg-paper">
+      <div className="border-b border-border px-3 py-2 text-[9px] uppercase tracking-[0.18em] text-muted">
+        Notation
+      </div>
+      <table className="w-full text-[11px] font-mono leading-tight">
+        <tbody>
+          <GroupRow title="Demand" />
+          <DefRow sym="V_u" desc="factored shear demand transferred at the column" />
+          <DefRow sym="|M_u|" desc="magnitude of the unbalanced moment transferred" />
+          <DefRow sym="\theta" descPre="(theta) " desc="direction of M_u vector in the slab plane, measured from +x" />
+
+          <GroupRow title="Geometry" />
+          <DefRow sym="c_1, c_2" desc="column side dimensions parallel / perpendicular to moment span" />
+          <DefRow sym="h" desc="total slab thickness" />
+          <DefRow sym="d" desc="effective slab depth ≈ h − 1″ cover" />
+          <DefRow sym="b_1, b_2" desc="critical-section side lengths;  b_1 = c_1 + d,  b_2 = c_2 + d" />
+          <DefRow sym="b_0" desc="critical-section perimeter;  b_0 = 2(b_1 + b_2)" />
+          <DefRow sym="d/2" desc="offset from each column face to the critical section" />
+
+          <GroupRow title="Moment transfer (ACI 318 §8.4.2.3)" />
+          <DefRow sym="\gamma_f" descPre="(gamma-f) " desc="fraction of M_u transferred by flexure across strip c_2 + 3h" />
+          <DefRow sym="\gamma_v" descPre="(gamma-v) " desc="fraction of M_u transferred by eccentric shear;  \gamma_v = 1 − \gamma_f" />
+          <DefRow sym="J_c" desc="polar moment of inertia of the critical section about its centroid" />
+
+          <GroupRow title="Capacity (ACI 318 §22.6.5)" />
+          <DefRow sym="\phi" descPre="(phi) " desc="strength reduction factor for shear (= 0.75)" />
+          <DefRow sym="\lambda" descPre="(lambda) " desc="lightweight-concrete modification factor (= 1 for normal weight)" />
+          <DefRow sym="\lambda_s" descPre="(lambda-s) " desc="size-effect factor, depth-dependent" />
+          <DefRow sym="\alpha_s" descPre="(alpha-s) " desc="column-position factor: 40 interior, 30 edge, 20 corner" />
+          <DefRow sym="\beta" descPre="(beta) " desc="ratio of long-to-short column dimension" />
+          <DefRow sym="f'_c" desc="specified concrete compressive strength" />
+
+          <GroupRow title="Stress / result" />
+          <DefRow sym="v_u(\theta)" desc="shear stress demand around the critical-section perimeter" />
+          <DefRow sym="v_{u,\max}" desc="peak demand along the perimeter (governs check)" />
+          <DefRow sym="\phi v_c" desc="two-way shear capacity per ACI 318 eq. 22.6.5.2" />
+          <DefRow sym="\mathrm{DCR}" desc="demand / capacity ratio;  v_{u,\max} ÷ (\phi v_c)" />
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function GroupRow({ title }: { title: string }) {
+  return (
+    <tr>
+      <td
+        colSpan={2}
+        className="px-3 pt-3 pb-1 text-[8px] uppercase tracking-[0.22em] text-muted border-t border-border first:border-t-0"
+      >
+        {title}
+      </td>
+    </tr>
+  );
+}
+
+function DefRow({ sym, desc, descPre }: { sym: string; desc: string; descPre?: string }) {
+  return (
+    <tr className="hover:bg-subtle/60">
+      <td className="px-3 py-[3px] align-baseline w-[26%] whitespace-nowrap border-t border-border/60">
+        <Tex>{sym}</Tex>
+      </td>
+      <td className="px-3 py-[3px] align-baseline text-ink border-t border-border/60">
+        {descPre && <span className="text-muted">{descPre}</span>}
+        {desc}
+      </td>
+    </tr>
+  );
+}
+
 export function EquationsStrip() {
   return (
     <div className="p-4 border border-ink bg-paper space-y-4">

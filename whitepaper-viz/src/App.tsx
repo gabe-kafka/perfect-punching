@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { HeroScene, DecompositionTriptych } from "./scenes";
-import { Controls, Readout, EquationsStrip } from "./ui";
+import { Controls, Readout, EquationsStrip, Notation } from "./ui";
 import type { Geometry } from "./math";
 
 /** Default fixtures: interior rectangular column 12" x 24", 8" slab, d = h − 1". */
@@ -17,17 +17,22 @@ export default function App() {
   const theta = (thetaDeg * Math.PI) / 180;
 
   return (
-    <div className="max-w-[1240px] mx-auto px-6 py-8 space-y-6">
-      <header className="space-y-1 pb-2 border-b border-ink">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Perfect Punching — Hanson &amp; Hanson decomposition
-        </h1>
-        <p className="text-sm text-muted max-w-2xl">
-          Interactive illustration of the ACI 318 §8.4.2.3 eccentric-shear model.
-          Drag the sliders to vary <em>V<sub>u</sub></em>, |<em>M<sub>u</sub></em>|,
-          and the moment direction θ. Every arrow length is computed from the code equation —
-          panel (d) is exactly the sum of panels (b) and (c).
-        </p>
+    <div className="max-w-[1240px] mx-auto px-6 py-6 space-y-6">
+      <header className="pb-4 border-b border-ink">
+        <img
+          src="/brand.png"
+          alt="Gabriel Kafka"
+          className="h-[52px] w-auto object-contain mb-4 select-none"
+          draggable={false}
+        />
+        <div className="flex items-baseline gap-4">
+          <span className="text-[9px] uppercase tracking-[0.24em] text-muted">
+            FIG-01 · Perfect Punching
+          </span>
+          <h1 className="text-xl font-semibold tracking-tight">
+            Hanson &amp; Hanson eccentric-shear decomposition
+          </h1>
+        </div>
       </header>
 
       <section className="space-y-2">
@@ -56,8 +61,9 @@ export default function App() {
         <Readout geom={GEOM} vuKip={vuKip} muKipFt={muKipFt} thetaDeg={thetaDeg} />
       </section>
 
-      <section>
+      <section className="grid md:grid-cols-[1fr_1fr] gap-4">
         <EquationsStrip />
+        <Notation />
       </section>
 
       <footer className="pt-4 text-xs text-muted border-t border-ink">
