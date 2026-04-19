@@ -625,6 +625,7 @@ export function HeroScene(props: SceneProps) {
       <Slab geom={g} />
       <CriticalSection geom={g} />
       <Column geom={g} />
+      <AxialVector pu={props.vu} startZ={1.25} endZ={0.1} fontSize={22} />
       <MomentVector mu={props.mu} theta={props.theta} centerZ={1.5} radius={0.75} />
 
       {/* ---- plan dimensions (in -y direction) ---- */}
