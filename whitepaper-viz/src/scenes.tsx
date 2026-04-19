@@ -656,12 +656,15 @@ export function HeroScene(props: SceneProps) {
         label="b_2"
       />
 
-      {/* ---- d/2 offset: leader pointing right so it doesn't overlap ---- */}
-      <Leader
-        anchor={[(hc1 + hb1) / 2, 0, 0]}
-        labelPos={[+hb1 + 1.85, +0.1, 0.25]}
-        label="d/2"
-        isTex
+      {/* ---- d/2 offset: proper Dim lifted above the slab so extension
+             lines (in +z) don't collide with the plan-view dims ------- */}
+      <Dim
+        a={[+hc1, 0, 0]}
+        b={[+hb1, 0, 0]}
+        offset={[0, 0, +0.32]}
+        label={`d/2 = ${(g.d / 2).toFixed(2)}''`}
+        tickSize={0.04}
+        fontSize={18}
       />
 
       {/* ---- elevation dimensions (vertical, at front-right slab edge) ---- */}
@@ -687,7 +690,7 @@ export function HeroScene(props: SceneProps) {
       <Leader
         anchor={[-hb1, -hb2, 0]}
         labelPos={[-hb1 - 1.4, -hb2 - 1.2, 0.5]}
-        label="b_0"
+        label={`b_0 = 2(b_1 + b_2) = ${b0(g).toFixed(1)}''`}
         isTex
       />
     </SceneFrame>
