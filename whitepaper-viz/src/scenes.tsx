@@ -655,14 +655,12 @@ export function HeroScene(props: SceneProps) {
         label="b_2"
       />
 
-      {/* ---- d/2 offset: between column face and critical section face ---- */}
-      <Dim
-        a={[+hc1, 0, 0]}
-        b={[+hb1, 0, 0]}
-        offset={[0, -0.12, 0]}
+      {/* ---- d/2 offset: leader pointing right so it doesn't overlap ---- */}
+      <Leader
+        anchor={[(hc1 + hb1) / 2, 0, 0]}
+        labelPos={[+hb1 + 1.85, +0.1, 0.25]}
         label="d/2"
-        tickSize={0.035}
-        fontSize={20}
+        isTex
       />
 
       {/* ---- elevation dimensions (vertical, at front-right slab edge) ---- */}
