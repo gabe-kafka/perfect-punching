@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { useMemo, useState } from "react";
+import { Canvas } from "@react-three/fiber";
 import { Line, OrbitControls, OrthographicCamera, Html } from "@react-three/drei";
 import * as THREE from "three";
 import katex from "katex";
@@ -42,39 +42,23 @@ const s = (v: number) => v * SCALE;
  * dimension labels track the angle of their dim line.
  */
 function MathLabel({
-  position, tex, fontSize = 22, color = INK, alignTo,
+  position, tex, fontSize = 22, color = INK,
 }: {
   position: [number, number, number];
   tex: string;
   fontSize?: number;
   color?: string;
+  /** Legacy — labels are now always upright; prop ignored. */
   alignTo?: [THREE.Vector3, THREE.Vector3];
 }) {
-  const { camera, size } = useThree();
-  const innerRef = useRef<HTMLDivElement>(null);
-
   const html = useMemo(
     () => katex.renderToString(tex, { throwOnError: false, displayMode: false }),
     [tex],
   );
 
-  // Re-compute the screen angle every frame so labels track a live camera
-  // (orbit, zoom). Mutates the DOM transform directly — no React re-render.
-  useFrame(() => {
-    if (!alignTo || !innerRef.current) return;
-    const [A, B] = alignTo;
-    const aP = A.clone().project(camera);
-    const bP = B.clone().project(camera);
-    const dx = (bP.x - aP.x) * size.width / 2;
-    const dy = -(bP.y - aP.y) * size.height / 2;
-    const t = Math.atan2(dy, dx);
-    innerRef.current.style.transform = `rotate(${t}rad)`;
-  });
-
   return (
     <Html position={position} center zIndexRange={[100, 0]}>
       <div
-        ref={innerRef}
         style={{
           color,
           fontSize: `${fontSize}px`,
@@ -83,8 +67,6 @@ function MathLabel({
           whiteSpace: "nowrap",
           userSelect: "none",
           lineHeight: 1,
-          transform: "rotate(0rad)",
-          transformOrigin: "center",
           display: "inline-block",
         }}
         dangerouslySetInnerHTML={{ __html: html }}
