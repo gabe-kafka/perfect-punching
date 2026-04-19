@@ -8,8 +8,6 @@ import {
   perimeterSamples, stressAt,
   type Geometry,
 } from "./math";
-import { OccBox } from "./cad/OccBox";
-import { useOcc } from "./cad/useOcc";
 
 /* ----------- palette ------------------------------------------------
  * CAD drawings per MIL-STD / ASME Y14.2: monochrome. Hierarchy via
@@ -273,23 +271,16 @@ function WireBox({
 /* ================================================================== */
 
 function Slab({ geom }: { geom: Geometry }) {
-  const oc = useOcc();
   const S = s(Math.max(B1(geom), B2(geom))) * 1.35;
-  if (!oc) {
-    return (
+  return (
+    <>
+      <HlrFace x1={-S} x2={+S} y1={-S} y2={+S} z1={-s(geom.h)} z2={0} />
       <WireBox
         x1={-S} x2={+S} y1={-S} y2={+S}
         z1={-s(geom.h)} z2={0}
         color={INK} lw={LW_THICK}
       />
-    );
-  }
-  return (
-    <OccBox
-      x1={-S} x2={+S} y1={-S} y2={+S}
-      z1={-s(geom.h)} z2={0}
-      edgeColor={INK}
-    />
+    </>
   );
 }
 
@@ -309,26 +300,51 @@ function CriticalSection({ geom, dashed = true }: { geom: Geometry; dashed?: boo
 
 /** Column sitting below, top flush with slab top surface. */
 function Column({ geom }: { geom: Geometry }) {
-  const oc = useOcc();
   const hc1 = s(geom.c1) / 2;
   const hc2 = s(geom.c2) / 2;
   const top = 0;
   const bot = -s(geom.h) - 1.6;
-  if (!oc) {
-    return (
+  return (
+    <>
+      <HlrFace x1={-hc1} x2={+hc1} y1={-hc2} y2={+hc2} z1={bot} z2={top} />
       <WireBox
         x1={-hc1} x2={+hc1} y1={-hc2} y2={+hc2}
         z1={bot} z2={top}
         color={INK} lw={LW_THICK}
       />
-    );
-  }
+    </>
+  );
+}
+
+/**
+ * Invisible box that writes to the depth buffer — pairs with a WireBox
+ * drawn on top to give true hidden-line removal: far edges get z-culled
+ * behind nearer faces. Polygon-offset prevents z-fighting between the
+ * face and its own edges. Pure Three.js — no CAD kernel needed for
+ * axis-aligned solids.
+ */
+function HlrFace({
+  x1, x2, y1, y2, z1, z2,
+}: {
+  x1: number; x2: number; y1: number; y2: number; z1: number; z2: number;
+}) {
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const cz = (z1 + z2) / 2;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const dz = z2 - z1;
   return (
-    <OccBox
-      x1={-hc1} x2={+hc1} y1={-hc2} y2={+hc2}
-      z1={bot} z2={top}
-      edgeColor={INK}
-    />
+    <mesh position={[cx, cy, cz]} renderOrder={0}>
+      <boxGeometry args={[dx, dy, dz]} />
+      <meshBasicMaterial
+        colorWrite={false}
+        depthWrite
+        polygonOffset
+        polygonOffsetFactor={1}
+        polygonOffsetUnits={1}
+      />
+    </mesh>
   );
 }
 

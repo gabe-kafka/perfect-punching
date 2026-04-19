@@ -2,7 +2,6 @@ import { useState } from "react";
 import { HeroScene, DecompositionTriptych } from "./scenes";
 import { Controls, Readout, EquationsStrip, Notation } from "./ui";
 import type { Geometry } from "./math";
-import { useOcc } from "./cad/useOcc";
 
 /** Default fixtures: interior rectangular column 12" x 24", 8" slab, d = h − 1". */
 const GEOM: Geometry = { c1: 12, c2: 24, h: 8, d: 7 };
@@ -37,11 +36,8 @@ export default function App() {
       </header>
 
       <section className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="text-xs uppercase tracking-[0.18em] text-muted">
-            (a) Moment transfer at the slab–column interface
-          </div>
-          <KernelStatus />
+        <div className="text-xs uppercase tracking-[0.18em] text-muted">
+          (a) Moment transfer at the slab–column interface
         </div>
         <HeroScene geom={GEOM} vu={vu} mu={mu} theta={theta} />
       </section>
@@ -80,19 +76,3 @@ export default function App() {
   );
 }
 
-function KernelStatus() {
-  const oc = useOcc();
-  return (
-    <div className="text-[9px] uppercase tracking-[0.18em] font-mono flex items-center gap-2">
-      <span
-        className={
-          "inline-block w-[6px] h-[6px] " +
-          (oc ? "bg-accentGreen" : "bg-accentAmber animate-pulse")
-        }
-      />
-      <span className="text-muted">
-        {oc ? "cad kernel · ready" : "cad kernel · loading"}
-      </span>
-    </div>
-  );
-}
