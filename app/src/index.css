@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-feature-settings: "tnum" 1;
+  background: theme("colors.paper");
+  color: theme("colors.ink");
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+input[type="number"], input[type="text"] {
+  background: theme("colors.paper");
+  border: 1px solid theme("colors.ink");
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+input[type="number"]:focus, input[type="text"]:focus {
+  border-color: theme("colors.accentBlue");
+}
+
+button {
+  font-family: inherit;
+}
