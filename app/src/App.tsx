@@ -45,7 +45,7 @@ export default function App() {
   const results: ColumnResult[] = useMemo(() => {
     if (!slab || columns.length === 0) return [];
     classifyColumns(slab, columns);
-    const tribMap = tributaryAreas(slab, columns, 12);
+    const tribMap = tributaryAreas(slab, columns, ingest?.walls ?? [], 12);
     columns.forEach((c) => {
       c.tributaryArea = tribMap.get(c.id) ?? 0;
     });

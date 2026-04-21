@@ -70,8 +70,9 @@ const typeCounts = { interior: 0, edge: 0, corner: 0 };
 for (const c of ingest.columns) typeCounts[c.type ?? "interior"]++;
 console.log(`Column types (webapp):`, typeCounts);
 
-// 4. Tributary areas via Voronoi grid sample (step = 12 in, as in the app)
-const tribs = tributaryAreas(slab, ingest.columns, 12);
+// 4. Tributary areas via wall-aware grid sample (step = 12 in, as in the app)
+const tribs = tributaryAreas(slab, ingest.columns, ingest.walls, 12);
+console.log(`Using ${ingest.walls.length} walls for stiffness-weighted tributary`);
 for (const c of ingest.columns) c.tributaryArea = tribs.get(c.id) ?? 0;
 
 // 5. ProjectInputs — matched to SAFE's design assumptions

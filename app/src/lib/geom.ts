@@ -103,20 +103,23 @@ export function rectPolygon(c1: number, c2: number, center: Vec2): Polygon {
   return offsetRect(c1, c2, center, 0);
 }
 
+/** Shortest distance from a point to line segment AB. */
+export function pointToSegmentDistance(p: Vec2, a: Vec2, b: Vec2): number {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy;
+  let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (len2 || 1);
+  t = Math.max(0, Math.min(1, t));
+  const cx = a[0] + t * dx;
+  const cy = a[1] + t * dy;
+  return Math.hypot(p[0] - cx, p[1] - cy);
+}
+
 /** Closest distance from a point to a polygon ring (positive inside or out). */
 export function pointToRingDistance(p: Vec2, r: Ring): number {
   let best = Infinity;
   for (let i = 0; i < r.length; i++) {
-    const a = r[i];
-    const b = r[(i + 1) % r.length];
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
-    const len2 = dx * dx + dy * dy;
-    let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (len2 || 1);
-    t = Math.max(0, Math.min(1, t));
-    const cx = a[0] + t * dx;
-    const cy = a[1] + t * dy;
-    const d = Math.hypot(p[0] - cx, p[1] - cy);
+    const d = pointToSegmentDistance(p, r[i], r[(i + 1) % r.length]);
     if (d < best) best = d;
   }
   return best;
