@@ -116,13 +116,22 @@ export function buildMesh(
     }
   }
 
-  // Merge + dedupe so poly2tri doesn't die on coincident points
-  const allSteiner = dedupe([...colPts, ...wallPts, ...interiorPts], 1e-4);
+  // First separate the mandatory column centroids — these ALWAYS stay in
+  // the mesh so the rigid-patch master node is guaranteed to sit at the
+  // column position.  Previously we filtered all Steiner points through
+  // an onBoundarySteiner check (to avoid poly2tri collinearity crashes
+  // when a wall ran along the slab boundary), but that filter also
+  // dropped column centroids that happened to sit within ~h_mesh of the
+  // slab edge — leaving edge-column "masters" at the wall-pinned
+  // boundary and silently disabling the rigid patch.
+  const columnCentroids: Vec2[] = columns.map(c => c.position);
+  const filterable = dedupe([...wallPts, ...interiorPts, ...colPts.filter(p => {
+    // colPts also contains ring points around each centroid for
+    // mesh refinement — those can be filtered; centroids are
+    // already in columnCentroids.
+    return !columnCentroids.some(c => Math.hypot(c[0]-p[0], c[1]-p[1]) < 1e-4);
+  })], 1e-4);
 
-  // First drop any Steiner point that lies ON a slab-boundary segment
-  // (segment, not just vertex): walls running along a slab edge create
-  // this pathology, and poly2tri rejects collinear steiners on a
-  // constrained edge ("EdgeEvent: Collinear not supported!").
   const onBoundarySteiner = (p: Vec2): boolean => {
     const tol = targetEdge * 0.35;
     for (let i = 0; i < slab.outer.length; i++) {
@@ -137,14 +146,22 @@ export function buildMesh(
     }
     return false;
   };
-  const steinerInterior = allSteiner.filter(p => !onBoundarySteiner(p));
+  const filteredSteiner = filterable.filter(p => !onBoundarySteiner(p));
+  // Column centroids bypass the boundary filter.  They are deduped
+  // against each other and against the other Steiners.
+  const centroidsUnique = dedupe(columnCentroids, 1e-4);
+  const steinerInterior = dedupe([...centroidsUnique, ...filteredSteiner], 1e-4);
 
   const outerDedup = dedupeAgainst(outerPts, steinerInterior, targetEdge * 0.3);
   const holeDedup = holePts.map(h => dedupeAgainst(h, [...steinerInterior, ...outerDedup], targetEdge * 0.3));
 
-  // Final dedupe between steiners and the (now-locked) boundary.
+  // Final dedupe between steiners and the (now-locked) boundary — but
+  // still keep column centroids even if they're close to the boundary.
   const allBoundary = [...outerDedup, ...holeDedup.flat()];
-  const safeSteiner = dedupeAgainst(steinerInterior, allBoundary, targetEdge * 0.3);
+  const safeSteiner = [
+    ...centroidsUnique,
+    ...dedupeAgainst(filteredSteiner, allBoundary, targetEdge * 0.3),
+  ];
 
   // ---- poly2tri ----
   const outerContour = outerDedup.map(([x, y]) => new poly2tri.Point(x, y));

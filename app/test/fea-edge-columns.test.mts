@@ -43,12 +43,17 @@ const slab: Polygon = {
 };
 
 // Place columns: two interior (spacing 20 ft apart), and two on the
-// right free edge (one at each end of the free span).
+// right free edge (one at each end of the free span).  The EDGE columns
+// are a tight-setback case (centroid 3" from the edge, rectangular
+// 12x24 geometry) that specifically exercised the mesher bug where the
+// onBoundarySteiner filter dropped the column centroid and left the
+// rigid patch with a wall-pinned master.  DCR > 2 here means the
+// regression has come back.
 const cols: Column[] = [
   { id: "INT-1", position: [240, H/2], c1: 18, c2: 18 },
   { id: "INT-2", position: [480, H/2], c1: 18, c2: 18 },
-  { id: "EDGE-T", position: [W - 9, H - 120], c1: 18, c2: 18 },  // near top-right
-  { id: "EDGE-B", position: [W - 9, 120],     c1: 18, c2: 18 },  // near bot-right
+  { id: "EDGE-T", position: [W - 3, H - 120], c1: 12, c2: 24 },  // tight setback, rectangular
+  { id: "EDGE-B", position: [W - 3, 120],     c1: 12, c2: 24 },
 ];
 
 // Walls along the short ends (left, top-bottom) and nothing at right = free edge
@@ -71,9 +76,19 @@ console.log(`Total load: ${(d.totalLoad/1000).toFixed(1)} kip  (columns ${(d.col
 
 console.log(`\nPer-column:`);
 console.log(`  id       type      Vu (kip)    Mu_res (kip-in)   DCR`);
+let worstDcr = 0;
 for (const c of cols) {
   const fe = fea.perColumn.get(c.id)!;
   const muRes = Math.hypot(fe.mu2, fe.mu3);
   const r = checkPunching(c, inputs, fe.mu2, fe.mu3, slab, fe.Vu);
   console.log(`  ${c.id.padEnd(8)} ${(c.type ?? "-").padEnd(9)} ${(fe.Vu/1000).toFixed(2).padStart(8)}   ${(muRes/1000).toFixed(1).padStart(10)}      ${r.dcr.toFixed(2).padStart(5)}`);
+  worstDcr = Math.max(worstDcr, r.dcr);
 }
+const DCR_SANITY_CAP = 2.0;
+if (worstDcr > DCR_SANITY_CAP) {
+  console.log(`\nFAIL: worst DCR ${worstDcr.toFixed(2)} exceeds sanity cap ${DCR_SANITY_CAP}`);
+  console.log(`This usually means the rigid patch didn't engage at an edge column —`);
+  console.log(`check that each column's mesh.columnNodes entry is AT the column position.`);
+  process.exit(1);
+}
+console.log(`\nPASS: worst DCR ${worstDcr.toFixed(2)} within sanity cap ${DCR_SANITY_CAP}`);
