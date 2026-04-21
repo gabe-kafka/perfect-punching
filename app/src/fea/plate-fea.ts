@@ -15,10 +15,13 @@ import { buildMesh } from "./mesher.ts";
 import { assembleGlobalK } from "./assembly.ts";
 import {
   applyColumnSprings,
+  applyRigidPatches,
   buildColumnSprings,
   collectFixedDofs,
   concreteE,
   expandDisplacement,
+  identifyColumnPatches,
+  reconstructSlaves,
   reduceSystem,
 } from "./bc.ts";
 import { assembleLoadVector, totalLoad } from "./loads.ts";
@@ -93,17 +96,28 @@ export function unbalancedMomentsFEA(
   const targetEdge = defaultMeshEdge(slab, cols, inputs);
   const mesh = buildMesh(slab, cols, walls, { targetEdge });
 
-  const K = assembleGlobalK(mesh, material);
+  let K = assembleGlobalK(mesh, material);
   const springs = buildColumnSprings(mesh, cols, inputs, material);
   applyColumnSprings(K, springs);
 
-  const F = assembleLoadVector(mesh, wu_psi);
+  let F = assembleLoadVector(mesh, wu_psi);
   const totalF = totalLoad(mesh, wu_psi);
 
+  // Rigid master-slave patch over each column footprint.  Eliminates the
+  // point-pin singularity that otherwise makes theta at edge columns
+  // mesh-dependent and blows up M_u in the recovery step.
+  const patches = identifyColumnPatches(mesh, cols);
+  const patched = applyRigidPatches(K, F, patches);
+  K = patched.K;
+  F = patched.F;
+
   const fixed = collectFixedDofs(mesh);
+  for (const d of patched.slaveDofs) fixed.add(d);
   const reduced = reduceSystem(K, F, fixed);
   const cg = solveCG(reduced.Kr, reduced.Fr, { tolerance: 1e-10 });
   const u = expandDisplacement(K.n, reduced.free, cg.u);
+  // After solve, populate slave DOFs from their masters via the constraint.
+  reconstructSlaves(u, patches);
 
   const perColumnRaw = recoverColumnResults(K, F, u, springs);
 

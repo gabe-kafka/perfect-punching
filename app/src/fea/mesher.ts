@@ -40,8 +40,21 @@ export function buildMesh(
   const outerPts = densifyRing(slab.outer, targetEdge);
   const holePts = (slab.holes ?? []).map(h => densifyRing(h, targetEdge));
 
-  // ---- Column steiner points ----
-  const colPts: Vec2[] = columns.map(c => c.position);
+  // ---- Column steiner points: centroid + 4 corner samples inside the
+  //      c1 x c2 footprint so the rigid-patch constraint has slaves to
+  //      enforce on.  Placed at 80% of the half-dimension to keep them
+  //      clearly inside the footprint.
+  const colPts: Vec2[] = [];
+  for (const c of columns) {
+    const [cx, cy] = c.position;
+    const dx = (c.c1 / 2) * 0.8;
+    const dy = (c.c2 / 2) * 0.8;
+    colPts.push([cx, cy]);
+    colPts.push([cx - dx, cy - dy]);
+    colPts.push([cx + dx, cy - dy]);
+    colPts.push([cx + dx, cy + dy]);
+    colPts.push([cx - dx, cy + dy]);
+  }
 
   // ---- Wall sample points ----
   const wallPts: Vec2[] = [];
