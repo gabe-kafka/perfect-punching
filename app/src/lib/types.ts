@@ -53,6 +53,12 @@ export interface ProjectInputs {
   defaultC2: number;
   /** Phi reduction factor (default 0.75). */
   phi: number;
+  /**
+   * Concrete shear strength reduction factor applied to f'_c inside the
+   * two-way shear capacity equation: vc = 4 * sqrt(fcs * f'_c).
+   * Default 1.0 (ACI 318 direct). Set 0.8 to match SAFE's internal default.
+   */
+  fcsFactor?: number;
 }
 
 export interface ColumnResult {
@@ -61,10 +67,18 @@ export interface ColumnResult {
   tributaryAreaIn2: number;
   /** lb */
   vu: number;
-  /** lb-in */
+  /** lb-in — resultant of (mu2, mu3). Kept for legacy table rendering. */
   mu: number;
+  /** lb-in — about local 2 axis (about X for un-rotated column). */
+  mu2: number;
+  /** lb-in — about local 3 axis (about Y for un-rotated column). */
+  mu3: number;
   b0: number;
+  /** Legacy single-axis value: Jc about the 3-axis. */
   jc: number;
+  /** Polar moment of inertia of critical section about each axis. */
+  jc2: number;
+  jc3: number;
   vuMaxPsi: number;
   phiVcPsi: number;
   dcr: number;

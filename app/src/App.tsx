@@ -4,6 +4,7 @@ import { largest } from "./lib/geom";
 import { tributaryAreas } from "./lib/voronoi";
 import { classifyColumns } from "./lib/classify";
 import { checkPunching } from "./lib/punching";
+import { unbalancedMoments } from "./lib/efm";
 import type { ColumnResult, ProjectInputs } from "./lib/types";
 import { Floor3D } from "./scenes/Floor3D";
 import { InputsPanel } from "./components/InputsPanel";
@@ -45,11 +46,16 @@ export default function App() {
   const results: ColumnResult[] = useMemo(() => {
     if (!slab || columns.length === 0) return [];
     classifyColumns(slab, columns);
-    const tribMap = tributaryAreas(slab, columns, 12);
+    const tribMap = tributaryAreas(slab, columns, ingest?.walls ?? [], 12);
     columns.forEach((c) => {
       c.tributaryArea = tribMap.get(c.id) ?? 0;
     });
-    return columns.map((c) => checkPunching(c, inputs));
+    const wu_psi = (1.2 * inputs.deadPsf + 1.6 * inputs.livePsf) / 144;
+    const muMap = unbalancedMoments(slab, columns, ingest?.walls ?? [], wu_psi);
+    return columns.map((c) => {
+      const m = muMap.get(c.id);
+      return checkPunching(c, inputs, m?.mu2, m?.mu3, slab);
+    });
   }, [slab, columns, inputs]);
 
   const resultsMap = useMemo(
