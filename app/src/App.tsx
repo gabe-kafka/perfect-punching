@@ -54,7 +54,7 @@ export default function App() {
     const muMap = unbalancedMoments(slab, columns, ingest?.walls ?? [], wu_psi);
     return columns.map((c) => {
       const m = muMap.get(c.id);
-      return checkPunching(c, inputs, m?.mu2, m?.mu3);
+      return checkPunching(c, inputs, m?.mu2, m?.mu3, slab);
     });
   }, [slab, columns, inputs]);
 

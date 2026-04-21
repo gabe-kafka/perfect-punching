@@ -95,7 +95,7 @@ const muMap = unbalancedMoments(slab, ingest.columns, ingest.walls, wu_psi);
 // 7. Run biaxial checkPunching for each column
 const results = ingest.columns.map(c => {
   const m = muMap.get(c.id);
-  return checkPunching(c, inputs, m?.mu2, m?.mu3);
+  return checkPunching(c, inputs, m?.mu2, m?.mu3, slab);
 });
 
 // 7. Write output
