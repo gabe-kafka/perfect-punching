@@ -5,7 +5,7 @@ import { tributaryAreas } from "./lib/voronoi";
 import { classifyColumns } from "./lib/classify";
 import { checkPunching } from "./lib/punching";
 import { unbalancedMoments } from "./lib/efm";
-import { unbalancedMomentsFEA } from "./fea/plate-fea";
+import { unbalancedMomentsFEA, type FEAUnbalanced } from "./fea/plate-fea";
 import type { ColumnResult, ProjectInputs } from "./lib/types";
 import { Floor3D } from "./scenes/Floor3D";
 import { InputsPanel } from "./components/InputsPanel";
@@ -78,8 +78,12 @@ function AppInner() {
     }));
   }, [ingest, inputs.defaultC1, inputs.defaultC2]);
 
-  const { results, solverDiag } = useMemo<{ results: ColumnResult[]; solverDiag: SolverDiagnostics }>(() => {
-    if (!slab || columns.length === 0) return { results: [], solverDiag: null };
+  const { results, solverDiag, feaPerColumn } = useMemo<{
+    results: ColumnResult[];
+    solverDiag: SolverDiagnostics;
+    feaPerColumn: Map<string, FEAUnbalanced> | null;
+  }>(() => {
+    if (!slab || columns.length === 0) return { results: [], solverDiag: null, feaPerColumn: null };
     classifyColumns(slab, columns);
     const tribMap = tributaryAreas(slab, columns, ingest?.walls ?? [], 12);
     columns.forEach((c) => {
@@ -107,7 +111,7 @@ function AppInner() {
           const m = fea.perColumn.get(c.id);
           return checkPunching(c, inputs, m?.mu2, m?.mu3, slab, m?.Vu);
         });
-        return { results: rs, solverDiag: diag };
+        return { results: rs, solverDiag: diag, feaPerColumn: fea.perColumn };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         const muMap = unbalancedMoments(slab, columns, ingest?.walls ?? [], wu_psi);
@@ -115,7 +119,7 @@ function AppInner() {
           const m = muMap.get(c.id);
           return checkPunching(c, inputs, m?.mu2, m?.mu3, slab);
         });
-        return { results: rs, solverDiag: { mode: "efm", reason: `FEA failed: ${msg}` } };
+        return { results: rs, solverDiag: { mode: "efm", reason: `FEA failed: ${msg}` }, feaPerColumn: null };
       }
     }
 
@@ -124,7 +128,7 @@ function AppInner() {
       const m = muMap.get(c.id);
       return checkPunching(c, inputs, m?.mu2, m?.mu3, slab);
     });
-    return { results: rs, solverDiag: { mode: "efm", reason: "FEA disabled in toolbar" } };
+    return { results: rs, solverDiag: { mode: "efm", reason: "FEA disabled in toolbar" }, feaPerColumn: null };
   }, [slab, columns, inputs, ingest?.walls, useFEA]);
 
   const resultsMap = useMemo(
@@ -155,6 +159,55 @@ function AppInner() {
     }
   };
 
+  const copyDebugReport = () => {
+    const lines: string[] = [];
+    lines.push(`# Perfect Punching — debug report`);
+    lines.push(`Date: ${new Date().toISOString()}`);
+    lines.push(`Solver: ${solverDiag?.mode ?? "none"}`);
+    if (solverDiag?.mode === "fea") {
+      lines.push(`Mesh: ${solverDiag.nNodes} nodes, ${solverDiag.nElements} elements`);
+      lines.push(`CG: ${solverDiag.iters} iters, residual ${solverDiag.residual.toExponential(2)}`);
+      lines.push(`Equilibrium: ${solverDiag.equilibriumErrPct.toFixed(4)}%`);
+      lines.push(`Load: total ${solverDiag.totalLoadKip.toFixed(2)} kip, cols ${solverDiag.colSumKip.toFixed(2)}, walls ${solverDiag.wallSumKip.toFixed(2)}`);
+    }
+    lines.push(``);
+    lines.push(`Inputs: fc=${inputs.fcPsi}  h=${inputs.hIn}  d=${inputs.dIn}  DL=${inputs.deadPsf}  LL=${inputs.livePsf}  defaultCol=${inputs.defaultC1}x${inputs.defaultC2}`);
+    const wu_psi = (1.2*inputs.deadPsf + 1.6*inputs.livePsf)/144;
+    lines.push(`wu = ${wu_psi.toFixed(3)} psi (${(wu_psi*144).toFixed(0)} psf factored)`);
+    lines.push(``);
+    lines.push(`Per column (FEA diagnostic):`);
+    lines.push(`id\ttype\tc1\tc2\tVu_kip\tMu2_kipin\tMu3_kipin\tMu_res_kipin\tb0\tDCR\ttheta_x\ttheta_y\tK_x_lbin_rad\tK_y_lbin_rad\tpatchSlaves\tmasterOffset_in`);
+    for (const r of results) {
+      const c = columns.find(cc => cc.id === r.columnId);
+      const f = feaPerColumn?.get(r.columnId);
+      const row = [
+        r.columnId, r.type,
+        c?.c1 ?? "",
+        c?.c2 ?? "",
+        (r.vu/1000).toFixed(2),
+        (r.mu2/1000).toFixed(1),
+        (r.mu3/1000).toFixed(1),
+        (r.mu/1000).toFixed(1),
+        r.b0.toFixed(1),
+        r.dcr.toFixed(3),
+        f?.thetaX?.toExponential(2) ?? "-",
+        f?.thetaY?.toExponential(2) ?? "-",
+        f?.kAboutX?.toExponential(2) ?? "-",
+        f?.kAboutY?.toExponential(2) ?? "-",
+        f?.patchSlaves ?? "-",
+        f?.masterOffsetIn?.toFixed(2) ?? "-",
+      ];
+      lines.push(row.join("\t"));
+    }
+    const text = lines.join("\n");
+    navigator.clipboard.writeText(text).then(
+      () => alert(`Copied ${results.length}-column debug report to clipboard.`),
+      () => alert(`Copy failed — text dumped to console.`),
+    );
+    // eslint-disable-next-line no-console
+    console.log(text);
+  };
+
   return (
     <div className="h-full grid" style={{ gridTemplateRows: "auto 1fr" }}>
       <Header
@@ -163,6 +216,7 @@ function AppInner() {
         onDemo={loadDemo}
         useFEA={useFEA}
         onToggleFEA={() => setUseFEA(v => !v)}
+        onCopyDebug={copyDebugReport}
         onExportExcel={() =>
           downloadBlob(exportExcel(results, columns), "punching-results.xlsx")
         }
@@ -215,13 +269,14 @@ export default function App() {
 }
 
 function Header({
-  ingest, onFile, onDemo, useFEA, onToggleFEA, onExportExcel, onExportDxf, canExport,
+  ingest, onFile, onDemo, useFEA, onToggleFEA, onCopyDebug, onExportExcel, onExportDxf, canExport,
 }: {
   ingest: IngestResult | null;
   onFile: (f: File) => void;
   onDemo: () => void;
   useFEA: boolean;
   onToggleFEA: () => void;
+  onCopyDebug: () => void;
   onExportExcel: () => void;
   onExportDxf: () => void;
   canExport: boolean;
@@ -253,6 +308,14 @@ function Header({
       </label>
       <button onClick={onDemo} className="border border-ink px-2 py-1 hover:bg-subtle uppercase tracking-wider text-[10px]">
         Load Demo DXF
+      </button>
+      <button
+        onClick={onCopyDebug}
+        disabled={!canExport}
+        className="border border-ink px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-subtle uppercase tracking-wider text-[10px]"
+        title="Copy per-column FEA diagnostics (theta, K_rot, patchSlaves) to clipboard"
+      >
+        Copy Debug
       </button>
       <button
         onClick={onExportExcel}

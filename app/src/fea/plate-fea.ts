@@ -37,6 +37,23 @@ export interface FEAUnbalanced {
   Vu: number;
   /** Deflection at the column node (in). */
   wAtCol: number;
+  /** Master-node rotation about global X (rad), for diagnostics. */
+  thetaX?: number;
+  /** Master-node rotation about global Y (rad), for diagnostics. */
+  thetaY?: number;
+  /** Column rotational spring stiffness about X (lb-in/rad). */
+  kAboutX?: number;
+  /** Column rotational spring stiffness about Y (lb-in/rad). */
+  kAboutY?: number;
+  /** Count of slave nodes in the rigid patch (diagnostic). */
+  patchSlaves?: number;
+  /** Index of the mesh node used as the column "master". */
+  masterNode?: number;
+  /** Distance from the column centroid to the master node (in).  0 if
+   *  the centroid landed exactly on the mesh node, which is what we
+   *  want; nonzero means the mesher found a different nearest node
+   *  and the rigid-patch assumptions may be off. */
+  masterOffsetIn?: number;
 }
 
 export interface FEADiagnostics {
@@ -121,14 +138,35 @@ export function unbalancedMomentsFEA(
 
   const perColumnRaw = recoverColumnResults(K, F, u, springs);
 
-  // Map to the efm.ts interface.
+  // Map to the efm.ts interface + attach diagnostics for the UI.
+  const patchByCol = new Map(patches.map(p => [p.columnId, p]));
+  const springByCol = new Map(springs.map(s => [s.id, s]));
+  const colByCol = new Map(cols.map(c => [c.id, c]));
+
   const perColumn = new Map<string, FEAUnbalanced>();
   for (const [id, v] of perColumnRaw) {
+    const sp = springByCol.get(id);
+    const p = patchByCol.get(id);
+    const col = colByCol.get(id);
+    const masterNode = sp?.nodeIndex ?? -1;
+    const masterOffsetIn = (col && masterNode >= 0)
+      ? Math.hypot(
+          mesh.nodes[masterNode].x - col.position[0],
+          mesh.nodes[masterNode].y - col.position[1],
+        )
+      : undefined;
     perColumn.set(id, {
       mu2: v.muAboutX,
       mu3: v.muAboutY,
       Vu: v.Vu,
       wAtCol: v.wAtCol,
+      thetaX: masterNode >= 0 ? u[3 * masterNode + 1] : undefined,
+      thetaY: masterNode >= 0 ? u[3 * masterNode + 2] : undefined,
+      kAboutX: sp?.kAboutX,
+      kAboutY: sp?.kAboutY,
+      patchSlaves: p?.slaves.length,
+      masterNode,
+      masterOffsetIn,
     });
   }
 
