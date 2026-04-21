@@ -10,6 +10,7 @@ import { ingestDxf } from "../src/lib/dxf-ingest.ts";
 import { classifyColumns } from "../src/lib/classify.ts";
 import { tributaryAreas } from "../src/lib/voronoi.ts";
 import { checkPunching } from "../src/lib/punching.ts";
+import { unbalancedMoments } from "../src/lib/efm.ts";
 import type { ProjectInputs, Polygon } from "../src/lib/types.ts";
 
 const [dxfPath, gtPath, outPath] = process.argv.slice(2);
@@ -87,8 +88,15 @@ const inputs: ProjectInputs = {
   phi: 0.75,
 };
 
-// 6. Run checkPunching for each column
-const results = ingest.columns.map(c => checkPunching(c, inputs));
+// 6. EFM-lite unbalanced moments per column
+const wu_psi = (1.2 * inputs.deadPsf + 1.6 * inputs.livePsf) / 144;
+const muMap = unbalancedMoments(slab, ingest.columns, ingest.walls, wu_psi);
+
+// 7. Run biaxial checkPunching for each column
+const results = ingest.columns.map(c => {
+  const m = muMap.get(c.id);
+  return checkPunching(c, inputs, m?.mu2, m?.mu3);
+});
 
 // 7. Write output
 const out = {
