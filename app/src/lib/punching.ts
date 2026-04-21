@@ -156,11 +156,16 @@ export function checkPunching(
   mu2_lb_in?: number,
   mu3_lb_in?: number,
   slab?: Polygon,
+  vuOverride_lb?: number,
 ): ColumnResult {
   const type: ColumnType = c.type ?? "interior";
   const trib_in2 = c.tributaryArea ?? 0;
   const wu_psi = (1.2 * p.deadPsf + 1.6 * p.livePsf) * psf_to_psi;
-  const vu = wu_psi * trib_in2;
+  // Prefer an FEA-derived column reaction (vuOverride_lb) over the
+  // Voronoi tributary estimate.  Tributary only models nearest-support
+  // geometry; FEA captures slab-wall stiffness competition and plate
+  // redistribution.
+  const vu = vuOverride_lb ?? (wu_psi * trib_in2);
 
   // Base critical-section rectangle (before edge/corner truncation)
   const b_x = c.c1 + p.dIn;  // X-direction

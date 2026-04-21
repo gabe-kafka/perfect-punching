@@ -12,8 +12,8 @@
  * condition stage knows which nodes to pin / spring.
  */
 import poly2tri from "poly2tri";
-import type { Column, Polygon, Vec2, Wall } from "../lib/types";
-import type { FEAMesh, FEANode, FEAElement } from "./types";
+import type { Column, Polygon, Vec2, Wall } from "../lib/types.ts";
+import type { FEAMesh, FEANode, FEAElement } from "./types.ts";
 
 export interface MeshOptions {
   /** Target edge length (in). Smaller = finer mesh. */
@@ -76,12 +76,33 @@ export function buildMesh(
 
   // Merge + dedupe so poly2tri doesn't die on coincident points
   const allSteiner = dedupe([...colPts, ...wallPts, ...interiorPts], 1e-4);
-  const outerDedup = dedupeAgainst(outerPts, allSteiner, targetEdge * 0.3);
-  const holeDedup = holePts.map(h => dedupeAgainst(h, [...allSteiner, ...outerDedup], targetEdge * 0.3));
 
-  // Filter steiner points that land on boundary (poly2tri rejects)
+  // First drop any Steiner point that lies ON a slab-boundary segment
+  // (segment, not just vertex): walls running along a slab edge create
+  // this pathology, and poly2tri rejects collinear steiners on a
+  // constrained edge ("EdgeEvent: Collinear not supported!").
+  const onBoundarySteiner = (p: Vec2): boolean => {
+    const tol = targetEdge * 0.35;
+    for (let i = 0; i < slab.outer.length; i++) {
+      const a = slab.outer[i], b = slab.outer[(i + 1) % slab.outer.length];
+      if (pointToSegDist(p, a, b) < tol) return true;
+    }
+    for (const h of slab.holes ?? []) {
+      for (let i = 0; i < h.length; i++) {
+        const a = h[i], b = h[(i + 1) % h.length];
+        if (pointToSegDist(p, a, b) < tol) return true;
+      }
+    }
+    return false;
+  };
+  const steinerInterior = allSteiner.filter(p => !onBoundarySteiner(p));
+
+  const outerDedup = dedupeAgainst(outerPts, steinerInterior, targetEdge * 0.3);
+  const holeDedup = holePts.map(h => dedupeAgainst(h, [...steinerInterior, ...outerDedup], targetEdge * 0.3));
+
+  // Final dedupe between steiners and the (now-locked) boundary.
   const allBoundary = [...outerDedup, ...holeDedup.flat()];
-  const safeSteiner = dedupeAgainst(allSteiner, allBoundary, 1e-2);
+  const safeSteiner = dedupeAgainst(steinerInterior, allBoundary, targetEdge * 0.3);
 
   // ---- poly2tri ----
   const outerContour = outerDedup.map(([x, y]) => new poly2tri.Point(x, y));

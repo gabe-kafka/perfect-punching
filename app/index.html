@@ -10,6 +10,8 @@
   </head>
   <body class="bg-paper text-ink">
     <div id="root"></div>
+    <!-- poly2tri (UMD/CJS) references `global` at load time; polyfill for browsers. -->
+    <script>window.global = window.global || window;</script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

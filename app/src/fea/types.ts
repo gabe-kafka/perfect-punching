@@ -1,12 +1,11 @@
 /**
  * Plate FEA internal types.
  *
- * Convention (Batoz 1980):
- *   w(x,y) out-of-plane displacement (positive up, consistent with
- *          "applied downward pressure q produces +w downward => we use
- *          q as positive downward and w as positive downward").
- *   theta_x ≈ ∂w/∂x (rotation of normal about y-axis, in Batoz notation beta_x)
- *   theta_y ≈ ∂w/∂y (rotation of normal about x-axis, in Batoz notation beta_y)
+ * Convention (Batoz 1980 / right-hand rule):
+ *   w(x,y) out-of-plane displacement. Positive w is downward, matching
+ *          the sign of an applied downward pressure q.
+ *   theta_x = -dw/dy   (rotation about x-axis)
+ *   theta_y = +dw/dx   (rotation about y-axis)
  *
  * Nodal DOF order: [w, theta_x, theta_y].
  * Global DOF index for node i: 3*i + [0|1|2].
@@ -46,9 +45,9 @@ export interface FEAMaterial {
 export interface FEAColumnSpring {
   id: string;
   nodeIndex: number;
-  /** Spring about the global x-axis (resists theta_y). */
+  /** Spring about the global x-axis, resists theta_x. */
   kAboutX: number;
-  /** Spring about the global y-axis (resists theta_x). */
+  /** Spring about the global y-axis, resists theta_y. */
   kAboutY: number;
 }
 

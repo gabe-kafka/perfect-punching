@@ -4,27 +4,28 @@
  * Reference: Batoz, Bathe, Ho (1980), "A study of three-node triangular plate
  * bending elements", IJNME 15(12), 1771-1812. Section 3.
  *
- * !!! KNOWN BUG — INCOMPLETE !!!
- * The formulas in this file pass patch tests for rigid-body w-translation
- * and rigid rotation about the X-axis (w = y mode), but FAIL rigid rotation
- * about the Y-axis (w = x mode). Ku norm for the latter is O(10), not ~0.
- *
- * The failure traces to a sign / edge-numbering mismatch between this
- * implementation and the Batoz paper. Getting DKT right from scratch in
- * one sitting without the paper in hand exceeded the session budget.
- *
- * Resolution paths (pick one before shipping):
- *   - Cross-check against Jeyachandrabose et al. (1985) explicit DKT form,
- *     or against ANDES/ANS DKT in Felippa's IFEM notes.
- *   - Replace with a simpler element (Morley triangle: 6 DOF) to avoid
- *     the convention trap, accepting ~10x fewer DOFs' worth of accuracy.
- *   - Use a pre-validated WASM FEA kernel (eigen.js + DKT from a known
- *     MATLAB port).
- *
  * DOF order per node: [w, theta_x, theta_y] with
- *   theta_x = +d w/dx  (Batoz beta_x — rotation of normal about y-axis)
- *   theta_y = +d w/dy  (Batoz beta_y — rotation of normal about x-axis)
+ *   theta_x = -d w/dy   (rotation about x-axis, right-hand rule)
+ *   theta_y = +d w/dx   (rotation about y-axis, right-hand rule)
  * Element DOFs: [w1,tx1,ty1, w2,tx2,ty2, w3,tx3,ty3].
+ *
+ * Under this convention, rigid-body modes are:
+ *   w = 1           -> u_i = [1, 0, 0]
+ *   w = y           -> u_i = [y_i, -1, 0]   (theta_x = -dw/dy = -1)
+ *   w = x           -> u_i = [x_i, 0, +1]   (theta_y = +dw/dx = +1)
+ *
+ * Derivation of mid-edge shape functions (used for the Kirchhoff constraint):
+ *   Along edge from node i to node j of length L, w is Hermite-cubic with
+ *   end values w_i, w_j and tangential slopes beta_s_i, beta_s_j. Evaluating
+ *   dw/ds at the midpoint gives
+ *       beta_s_mid = (1.5 / L)(w_j - w_i) - 0.25 (beta_s_i + beta_s_j)
+ *   beta_n at the midpoint is the linear average 0.5(beta_n_i + beta_n_j).
+ *   Converting back to (beta_x, beta_y) via the edge tangent/normal yields
+ *   the Hx/Hy coefficients below. In particular:
+ *       coef of w_i in Hx via N_k = +1.5 * a_k          (a_k = -x_ij / L_k^2)
+ *       coef of w_j in Hx via N_k = -1.5 * a_k
+ *       coef of w_i in Hy via N_k = +1.5 * d_k          (d_k = -y_ij / L_k^2)
+ *       coef of w_j in Hy via N_k = -1.5 * d_k
  *
  * Curvature = B · U with
  *   kappa_xx = d beta_x / dx          -> B row 0
@@ -108,13 +109,13 @@ function hxValues(xi1: number, xi2: number, xi3: number, C: DktCoeffs): number[]
   const [c4, c5, c6] = C.c;
 
   return [
-    1.5 * (a6 * N6 - a4 * N4),                  // Hx1 (node 1, w)
+    1.5 * (a4 * N4 - a6 * N6),                  // Hx1 (node 1, w)    sign-flipped from original
     b6 * N6 + b4 * N4,                          // Hx2 (node 1, theta_x)
     N1 - c6 * N6 - c4 * N4,                     // Hx3 (node 1, theta_y)
-    1.5 * (a4 * N4 - a5 * N5),                  // Hx4 (node 2, w)
+    1.5 * (a5 * N5 - a4 * N4),                  // Hx4 (node 2, w)    sign-flipped
     b4 * N4 + b5 * N5,                          // Hx5 (node 2, theta_x)
     N2 - c4 * N4 - c5 * N5,                     // Hx6 (node 2, theta_y)
-    1.5 * (a5 * N5 - a6 * N6),                  // Hx7 (node 3, w)
+    1.5 * (a6 * N6 - a5 * N5),                  // Hx7 (node 3, w)    sign-flipped
     b5 * N5 + b6 * N6,                          // Hx8 (node 3, theta_x)
     N3 - c5 * N5 - c6 * N6,                     // Hx9 (node 3, theta_y)
   ];
@@ -133,13 +134,13 @@ function hyValues(xi1: number, xi2: number, xi3: number, C: DktCoeffs): number[]
   const [e4, e5, e6] = C.e;
 
   return [
-    1.5 * (d6 * N6 - d4 * N4),
+    1.5 * (d4 * N4 - d6 * N6),                  // Hy1 (node 1, w)    sign-flipped
     -N1 + e6 * N6 + e4 * N4,
     -b6 * N6 - b4 * N4,
-    1.5 * (d4 * N4 - d5 * N5),
+    1.5 * (d5 * N5 - d4 * N4),                  // Hy4 (node 2, w)    sign-flipped
     -N2 + e4 * N4 + e5 * N5,
     -b4 * N4 - b5 * N5,
-    1.5 * (d5 * N5 - d6 * N6),
+    1.5 * (d6 * N6 - d5 * N5),                  // Hy7 (node 3, w)    sign-flipped
     -N3 + e5 * N5 + e6 * N6,
     -b5 * N5 - b6 * N6,
   ];
@@ -217,25 +218,28 @@ export function bMatrix(
 
   // Matrix of N-coefficients per DOF for Hx (9 rows x 6 cols for N1..N6):
   // Row order matches element DOFs [w1,tx1,ty1,w2,tx2,ty2,w3,tx3,ty3].
+  // Rows 0, 3, 6 below are the w-DOF rows. Their signs on the N4/N5/N6
+  // columns were flipped relative to an earlier transcription; see the
+  // Hermite-cubic derivation in the file header for why.
   const HxCoef: number[][] = [
-    [ 0,      0,      0,  -1.5*a4,  0,  1.5*a6 ],  // Hx1
+    [ 0,      0,      0,   1.5*a4,  0, -1.5*a6 ],  // Hx1 (w1)
     [ 0,      0,      0,   b4,      0,  b6     ],  // Hx2
     [ 1,      0,      0,  -c4,      0, -c6     ],  // Hx3
-    [ 0,      0,      0,   1.5*a4, -1.5*a5, 0  ],  // Hx4
+    [ 0,      0,      0,  -1.5*a4,  1.5*a5, 0  ],  // Hx4 (w2)
     [ 0,      0,      0,   b4,      b5,     0  ],  // Hx5
     [ 0,      1,      0,  -c4,     -c5,     0  ],  // Hx6
-    [ 0,      0,      0,   0,       1.5*a5, -1.5*a6 ], // Hx7
+    [ 0,      0,      0,   0,      -1.5*a5, 1.5*a6 ], // Hx7 (w3)
     [ 0,      0,      0,   0,       b5,      b6     ], // Hx8
     [ 0,      0,      1,   0,      -c5,     -c6     ], // Hx9
   ];
   const HyCoef: number[][] = [
-    [ 0,      0,      0,  -1.5*d4_, 0,  1.5*d6_ ],
+    [ 0,      0,      0,   1.5*d4_, 0, -1.5*d6_ ],  // Hy1 (w1)
     [ -1,     0,      0,   e4,      0,  e6      ],
     [ 0,      0,      0,  -b4,      0, -b6      ],
-    [ 0,      0,      0,   1.5*d4_,-1.5*d5_, 0  ],
+    [ 0,      0,      0,  -1.5*d4_, 1.5*d5_, 0  ],  // Hy4 (w2)
     [ 0,     -1,      0,   e4,      e5,     0   ],
     [ 0,      0,      0,  -b4,     -b5,     0   ],
-    [ 0,      0,      0,   0,       1.5*d5_, -1.5*d6_ ],
+    [ 0,      0,      0,   0,      -1.5*d5_, 1.5*d6_ ],  // Hy7 (w3)
     [ 0,      0,     -1,   0,       e5,      e6      ],
     [ 0,      0,      0,   0,      -b5,     -b6      ],
   ];
