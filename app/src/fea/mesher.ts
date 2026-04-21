@@ -40,20 +40,49 @@ export function buildMesh(
   const outerPts = densifyRing(slab.outer, targetEdge);
   const holePts = (slab.holes ?? []).map(h => densifyRing(h, targetEdge));
 
-  // ---- Column steiner points: centroid + 4 corner samples inside the
-  //      c1 x c2 footprint so the rigid-patch constraint has slaves to
-  //      enforce on.  Placed at 80% of the half-dimension to keep them
-  //      clearly inside the footprint.
+  // ---- Column footprint seeds + column-local refinement ----
+  //
+  // The centroid is always a Steiner.  We also seed an 8-point ring inside
+  // the c1 x c2 footprint (4 sides + 4 corners, each at 80% of the
+  // half-dimension) so the rigid-patch constraint has 4-9 slaves per
+  // column.  On top of that we add 8 ring points at ~1.5 x footprint
+  // radius to refine the mesh immediately around each column — without
+  // this, interior-grid spacing (~1.5 * targetEdge) leaves the plate
+  // under-resolved at the free-edge side of edge/corner columns, and
+  // the recovered Mu inflates.
+  //
+  // Every candidate is filtered through pointInsideSlab so points that
+  // would sit outside the slab (or inside a hole) are dropped.  For edge
+  // columns this cleanly leaves the patch asymmetric on the free side,
+  // as it should be.
   const colPts: Vec2[] = [];
   for (const c of columns) {
     const [cx, cy] = c.position;
-    const dx = (c.c1 / 2) * 0.8;
-    const dy = (c.c2 / 2) * 0.8;
-    colPts.push([cx, cy]);
-    colPts.push([cx - dx, cy - dy]);
-    colPts.push([cx + dx, cy - dy]);
-    colPts.push([cx + dx, cy + dy]);
-    colPts.push([cx - dx, cy + dy]);
+    const hx = c.c1 / 2, hy = c.c2 / 2;
+    const candidates: Vec2[] = [
+      [cx, cy],
+      // 8-point ring inside the footprint at 80%
+      [cx - hx*0.8, cy - hy*0.8],
+      [cx + hx*0.8, cy - hy*0.8],
+      [cx + hx*0.8, cy + hy*0.8],
+      [cx - hx*0.8, cy + hy*0.8],
+      [cx,          cy - hy*0.8],
+      [cx + hx*0.8, cy],
+      [cx,          cy + hy*0.8],
+      [cx - hx*0.8, cy],
+      // 8-point ring at 1.5 x footprint radius — local mesh refinement
+      [cx - hx*1.5, cy - hy*1.5],
+      [cx + hx*1.5, cy - hy*1.5],
+      [cx + hx*1.5, cy + hy*1.5],
+      [cx - hx*1.5, cy + hy*1.5],
+      [cx,          cy - hy*1.5],
+      [cx + hx*1.5, cy],
+      [cx,          cy + hy*1.5],
+      [cx - hx*1.5, cy],
+    ];
+    for (const p of candidates) {
+      if (pointInsideSlab(p, slab)) colPts.push(p);
+    }
   }
 
   // ---- Wall sample points ----
