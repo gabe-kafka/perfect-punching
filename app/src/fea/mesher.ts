@@ -116,19 +116,52 @@ export function buildMesh(
     }
   }
 
-  // First separate the mandatory column centroids — these ALWAYS stay in
-  // the mesh so the rigid-patch master node is guaranteed to sit at the
-  // column position.  Previously we filtered all Steiner points through
-  // an onBoundarySteiner check (to avoid poly2tri collinearity crashes
-  // when a wall ran along the slab boundary), but that filter also
-  // dropped column centroids that happened to sit within ~h_mesh of the
-  // slab edge — leaving edge-column "masters" at the wall-pinned
-  // boundary and silently disabling the rigid patch.
-  const columnCentroids: Vec2[] = columns.map(c => c.position);
+  // ---- Column centroids: always in the mesh, but nudged inward ----
+  //
+  // Column centroids must be in the mesh so the rigid-patch master sits
+  // at the column (previously they were silently dropped by
+  // onBoundarySteiner when near the slab edge, which disabled the
+  // patch).  But a centroid that lies ON or very close to a slab-
+  // boundary segment makes poly2tri throw "EdgeEvent: Collinear not
+  // supported!" because the Steiner point is effectively on a
+  // constrained edge.
+  //
+  // Fix: if a centroid is within `minBoundaryGap` of any boundary
+  // segment, move it perpendicular to that segment by enough to restore
+  // the gap.  The master node ends up slightly offset from the column's
+  // physical centroid; the rigid-patch lever-arm math handles that
+  // correctly because levers are computed from actual mesh positions.
+  const minBoundaryGap = targetEdge * 0.5;
+  const nudgeInward = (p: Vec2): Vec2 => {
+    const segs: [Vec2, Vec2][] = [];
+    for (let i = 0; i < slab.outer.length; i++) {
+      segs.push([slab.outer[i], slab.outer[(i + 1) % slab.outer.length]]);
+    }
+    for (const h of slab.holes ?? []) {
+      for (let i = 0; i < h.length; i++) segs.push([h[i], h[(i + 1) % h.length]]);
+    }
+    let bestDist = Infinity;
+    let bestSeg: [Vec2, Vec2] | null = null;
+    for (const s of segs) {
+      const d = pointToSegDist(p, s[0], s[1]);
+      if (d < bestDist) { bestDist = d; bestSeg = s; }
+    }
+    if (bestDist >= minBoundaryGap || !bestSeg) return p;
+    const [a, b] = bestSeg;
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const L = Math.hypot(dx, dy);
+    if (L < 1e-9) return p;
+    const nxA = -dy / L, nyA = dx / L;
+    const shift = minBoundaryGap - bestDist + 1e-2;
+    const candA: Vec2 = [p[0] + nxA * shift, p[1] + nyA * shift];
+    if (pointInsideSlab(candA, slab)) return candA;
+    const candB: Vec2 = [p[0] - nxA * shift, p[1] - nyA * shift];
+    if (pointInsideSlab(candB, slab)) return candB;
+    return p;
+  };
+  const columnCentroids: Vec2[] = columns.map(c => nudgeInward(c.position));
+
   const filterable = dedupe([...wallPts, ...interiorPts, ...colPts.filter(p => {
-    // colPts also contains ring points around each centroid for
-    // mesh refinement — those can be filtered; centroids are
-    // already in columnCentroids.
     return !columnCentroids.some(c => Math.hypot(c[0]-p[0], c[1]-p[1]) < 1e-4);
   })], 1e-4);
 
@@ -147,8 +180,6 @@ export function buildMesh(
     return false;
   };
   const filteredSteiner = filterable.filter(p => !onBoundarySteiner(p));
-  // Column centroids bypass the boundary filter.  They are deduped
-  // against each other and against the other Steiners.
   const centroidsUnique = dedupe(columnCentroids, 1e-4);
   const steinerInterior = dedupe([...centroidsUnique, ...filteredSteiner], 1e-4);
 
@@ -208,11 +239,15 @@ export function buildMesh(
     elements.push({ n: [n0, n1, n2], area });
   }
 
-  // ---- Map columns to nearest nodes (should be exact since they were steiner pts) ----
+  // ---- Map columns to nearest nodes ----
+  // Use the (possibly nudged) centroid position that we actually put in
+  // the mesh, not the raw column position.  Otherwise a column whose
+  // centroid got nudged inward would have its "master" pointed at a
+  // different nearby node — silently disabling the rigid patch.
   const columnNodes = new Map<string, number>();
-  for (const c of columns) {
-    const idx = nearestNode(nodes, c.position);
-    columnNodes.set(c.id, idx);
+  for (let i = 0; i < columns.length; i++) {
+    const target = columnCentroids[i];
+    columnNodes.set(columns[i].id, nearestNode(nodes, target));
   }
 
   // ---- Wall nodes: all nodes close to any wall segment ----
