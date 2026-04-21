@@ -47,6 +47,10 @@ export function InputsPanel({
           <input type="number" value={inputs.defaultC2}
             onChange={(e) => set("defaultC2", Number(e.target.value))} />
         </Field>
+        <Field label="fcs (f'c reducer)">
+          <input type="number" step="0.05" value={inputs.fcsFactor ?? 1.0}
+            onChange={(e) => set("fcsFactor", Number(e.target.value))} />
+        </Field>
       </div>
     </div>
   );

@@ -17,14 +17,20 @@ import type { Column, ColumnResult, ProjectInputs } from "./types";
 const psf_to_psi = 1 / 144;
 const ft2 = 144;
 
-/** Two-way shear capacity (no shear reinforcement, normal-weight, λ=λs=1). */
+/**
+ * Two-way shear capacity (no shear reinforcement, normal-weight, λ=λs=1).
+ *
+ * fcsFactor (default 1.0) multiplies f'_c under the square root. ACI 318
+ * uses f'_c directly. SAFE's default workflow applies ~0.8 as a conservative
+ * reduction — set fcsFactor=0.8 to SAFE-match.
+ */
 export function phiVc(
   c1: number, c2: number, b0: number, d: number, type: ColumnResult["type"],
-  fcPsi: number, phi: number,
+  fcPsi: number, phi: number, fcsFactor: number = 1.0,
 ): number {
   const beta = Math.max(c1, c2) / Math.min(c1, c2);
   const alphaS = type === "interior" ? 40 : type === "edge" ? 30 : 20;
-  const sq = Math.sqrt(fcPsi);
+  const sq = Math.sqrt(fcsFactor * fcPsi);
   return phi * Math.min(
     4 * sq,
     (2 + 4 / beta) * sq,
@@ -75,7 +81,7 @@ export function checkPunching(c: Column, p: ProjectInputs): ColumnResult {
   const ecc = (gv * mu * (b1 / 2)) / jc;
   const vuMax = direct + ecc;
 
-  const phiVc_ = phiVc(c.c1, c.c2, b0, p.dIn, type, p.fcPsi, p.phi);
+  const phiVc_ = phiVc(c.c1, c.c2, b0, p.dIn, type, p.fcPsi, p.phi, p.fcsFactor ?? 1.0);
 
   return {
     columnId: c.id,

@@ -53,6 +53,12 @@ export interface ProjectInputs {
   defaultC2: number;
   /** Phi reduction factor (default 0.75). */
   phi: number;
+  /**
+   * Concrete shear strength reduction factor applied to f'_c inside the
+   * two-way shear capacity equation: vc = 4 * sqrt(fcs * f'_c).
+   * Default 1.0 (ACI 318 direct). Set 0.8 to match SAFE's internal default.
+   */
+  fcsFactor?: number;
 }
 
 export interface ColumnResult {
