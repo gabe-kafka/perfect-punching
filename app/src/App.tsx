@@ -1,6 +1,6 @@
 import { Component, useMemo, useState, type ReactNode } from "react";
 import { ingestDxf, type IngestResult } from "./lib/dxf-ingest";
-import { largest } from "./lib/geom";
+import { largest, pointInRing } from "./lib/geom";
 import { tributaryAreas } from "./lib/voronoi";
 import { classifyColumns } from "./lib/classify";
 import { checkPunching } from "./lib/punching";
@@ -68,15 +68,36 @@ function AppInner() {
     return largest(ingest.slabs.map((s) => s.polygon));
   }, [ingest]);
 
-  // Apply default column sizes to ingested columns
+  // Apply default column sizes to ingested columns AND drop columns that
+  // lie outside the slab polygon.  Phantom POINTs (grid dots, setting-
+  // out marks, duplicate drafting entities) on the COLUMN-REAL layer
+  // otherwise pollute:
+  //   - tributaryAreas  (get 0 area but still clutter the column list)
+  //   - efm.findSpans   (show up as "nearest neighbor" for real columns'
+  //                      ray searches, producing huge spans → huge Mu)
+  //   - the FEA mesher  (column centroid Steiner point outside the slab
+  //                      gets dropped by pointInsideSlab and the rigid
+  //                      patch loses its master).
+  // A tiny inward tolerance (−1 in) keeps columns truly on the boundary
+  // inside; anything more than 1 in outside the polygon is dropped.
   const columns = useMemo(() => {
     if (!ingest) return [];
-    return ingest.columns.map((c) => ({
-      ...c,
-      c1: c.c1 || inputs.defaultC1,
-      c2: c.c2 || inputs.defaultC2,
-    }));
-  }, [ingest, inputs.defaultC1, inputs.defaultC2]);
+    const outer = slab?.outer;
+    const holes = slab?.holes ?? [];
+    const inside = (p: [number, number]) => {
+      if (!outer) return true;
+      if (!pointInRing(p, outer)) return false;
+      for (const h of holes) if (pointInRing(p, h)) return false;
+      return true;
+    };
+    return ingest.columns
+      .filter(c => inside(c.position))
+      .map(c => ({
+        ...c,
+        c1: c.c1 || inputs.defaultC1,
+        c2: c.c2 || inputs.defaultC2,
+      }));
+  }, [ingest, slab, inputs.defaultC1, inputs.defaultC2]);
 
   const { results, solverDiag, feaPerColumn } = useMemo<{
     results: ColumnResult[];
@@ -233,7 +254,7 @@ function AppInner() {
         <div className="flex flex-col gap-3 min-h-0 overflow-auto">
           <InputsPanel inputs={inputs} onChange={setInputs} />
           {solverDiag && <SolverPanel diag={solverDiag} />}
-          {ingest && <Diagnostics ingest={ingest} />}
+          {ingest && <Diagnostics ingest={ingest} droppedPhantoms={ingest.columns.length - columns.length} keptColumns={columns.length} />}
           {error && (
             <div className="border border-accentRed text-accentRed p-2 text-[10px] font-mono">
               {error}
@@ -333,7 +354,7 @@ function Header({
       </button>
       {ingest && (
         <span className="text-[9px] text-muted">
-          {ingest.slabs.length} slab · {ingest.columns.length} cols · {ingest.walls.length} walls
+          {ingest.slabs.length} slab · {ingest.columns.length} ingested cols · {ingest.walls.length} walls
         </span>
       )}
     </header>
@@ -382,7 +403,7 @@ function SolverPanel({ diag }: { diag: SolverDiagnostics }) {
   );
 }
 
-function Diagnostics({ ingest }: { ingest: IngestResult }) {
+function Diagnostics({ ingest, droppedPhantoms, keptColumns }: { ingest: IngestResult; droppedPhantoms: number; keptColumns: number }) {
   return (
     <div className="border border-ink">
       <div className="border-b border-border px-3 py-2 text-[9px] uppercase tracking-[0.18em] text-muted">
@@ -396,6 +417,12 @@ function Diagnostics({ ingest }: { ingest: IngestResult }) {
         <div>
           <span className="text-muted">columns (raw → dedup): </span>
           {ingest.stats.columnsBeforeDedup} → {ingest.columns.length}
+        </div>
+        <div>
+          <span className="text-muted">in-slab / phantom: </span>
+          <span className={droppedPhantoms > 0 ? "text-accentAmber" : ""}>
+            {keptColumns} / {droppedPhantoms} dropped
+          </span>
         </div>
         <div>
           <span className="text-muted">entities: </span>
