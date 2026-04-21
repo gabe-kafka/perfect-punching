@@ -11,9 +11,11 @@
   "dependencies": {
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.10",
+    "delaunator": "^5.1.0",
     "dxf": "^5.3.1",
     "dxf-writer": "^1.18.4",
     "katex": "^0.16.11",
+    "poly2tri": "^1.5.0",
     "polygon-clipping": "^0.15.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

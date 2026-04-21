@@ -59,6 +59,14 @@ export interface ProjectInputs {
    * Default 1.0 (ACI 318 direct). Set 0.8 to match SAFE's internal default.
    */
   fcsFactor?: number;
+  /** Column height (in), used for rotational-spring stiffness. Default 144 (12 ft). */
+  columnHeightIn?: number;
+  /** Column end fixity at the far end: "fixed" (4EI/L) or "pinned" (3EI/L). Default "fixed". */
+  columnFarEndFixity?: "fixed" | "pinned";
+  /** Concrete Poisson's ratio. Default 0.2. */
+  concreteNu?: number;
+  /** FEA mesh target edge length (in). If omitted, derived from d and column spacing. */
+  meshTargetEdgeIn?: number;
 }
 
 export interface ColumnResult {
