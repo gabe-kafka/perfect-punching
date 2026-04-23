@@ -1,0 +1,70 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.55in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{array}
+\setlist{nosep, leftmargin=1.2em}
+\titlespacing*{\section}{0pt}{5pt}{2pt}
+\titleformat{\section}{\normalsize\bfseries}{}{0pt}{}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}{\large\bfseries ACI 318-19 Punching-Shear Design Conventions}\end{center}
+
+One toggle in the Inputs panel turns on two ACI-consistent design conventions at once. Both are long-standing ACI provisions; both reduce false positives produced by a raw biaxial check on an unstable solver or a symmetric tributary. The flow is \textit{first} try to qualify the column for $\gamma_v = 0$ via Table 8.4.2.2.4; \textit{then}, at corner columns only, keep $0.3\,M_o$ as a floor so a solver can't silently under-predict at the column type most sensitive to live-load patterning.
+
+\section*{1. Modified $\gamma_f$ per Table 8.4.2.2.4}
+At a column the unbalanced slab moment $M_{sc}$ is split: a fraction $\gamma_f M_{sc}$ is transferred by flexure across the effective strip $c_2 + 3h$, and $\gamma_v M_{sc} = (1-\gamma_f) M_{sc}$ by eccentric shear on the critical section. Baseline (\S 8.4.2.2.2) gives $\gamma_f = 1/\bigl(1 + \tfrac{2}{3}\sqrt{b_1/b_2}\bigr)$. Table 8.4.2.2.4 permits $\gamma_f$ to be raised --- up to $1.0$ for corner and edge-perpendicular cases --- when the direct shear is modest AND the slab rebar is ductile.
+
+\begin{tabular}{|l|l|c|c|c|}
+\hline
+\textbf{Column} & \textbf{Span direction} & $v_{uv} \leq$ & $\varepsilon_t \geq$ & $\gamma_{f,\max}$ \\
+\hline
+Corner          & either                   & $0.5\,\phi v_c$   & $\varepsilon_{ty} + 0.003$ & $1.0$ \\
+Edge            & perpendicular to edge    & $0.75\,\phi v_c$  & $\varepsilon_{ty} + 0.003$ & $1.0$ \\
+Edge            & parallel to edge         & $0.4\,\phi v_c$   & $\varepsilon_{ty} + 0.008$ & $\dfrac{1.25}{1 + \tfrac{2}{3}\sqrt{b_1/b_2}} \leq 1.0$ \\
+Interior        & either                   & $0.4\,\phi v_c$   & $\varepsilon_{ty} + 0.008$ & $\dfrac{1.25}{1 + \tfrac{2}{3}\sqrt{b_1/b_2}} \leq 1.0$ \\
+\hline
+\end{tabular}
+
+\vspace{3pt}
+
+\noindent\textbf{(a) Direct shear.} $v_{uv} = V_u / (b_0 d)$, excluding moment contributions. Must fall at or below the tabulated fraction of $\phi v_c$ for the row to apply. The app computes $v_{uv}$ per column and falls back to baseline $\gamma_f$ when the gate fails --- no user action required.
+
+\vspace{2pt}
+
+\noindent\textbf{(b) Ductile flexure.} $\varepsilon_t$ in the column-strip reinforcement must meet the stated strain minimum. For Grade 60 these evaluate to $\approx 0.00507$ (rows with $\gamma_{f,\max} = 1.0$) and $\approx 0.01007$ (rows with the $1.25\times$ boost). Typical well-designed slabs satisfy the looser bound without trying; the stricter bound pushes toward lightly-reinforced column strips. \textbf{Checking this box is your attestation that the slab design meets this limit and has rebar concentrated across $c_2 + 3h$ per \S 8.4.2.2.5}.
+
+\section*{2. $0.3\,M_o$ Floor per DDM (\S 8.10) --- corner columns only}
+After $\gamma_f$ is fixed, a lower bound is enforced on $|M_u|$ \textbf{at corner columns only}:
+\[
+|M_{u,\text{used}}|
+\;=\; \max\!\bigl(\,|M_{u,\text{solver}}|,\, 0.3\, M_o\,\bigr), \qquad
+M_o \;=\; \frac{w_u\, l_2\, l_n^2}{8}.
+\]
+$l_1$ and $l_2$ are center-to-center spans to adjacent columns (or to the slab edge at a free side); $l_n \geq 0.65\,l_1$. The floor is applied per axis independently. Sign is preserved from the solver. Interior and edge columns use the solver's $M_u$ unchanged.
+
+\vspace{3pt}
+
+\noindent\textbf{Why corner-only.} Corners have the smallest tributary and the largest relative sensitivity to live-load patterning --- a one-sided pattern that would nudge an interior Mu by a few percent can dominate a corner's Mu, and gravity-balanced FEA will not see that. DDM's $0.3\,M_o$ is a historically accepted lower bound for exactly this pattern-loading case, and keeping the floor narrow to corner columns avoids over-penalizing edge/interior columns where a stable FEA already captures asymmetric tributary correctly. Using it as a floor (not a ceiling) keeps solver detail where it exceeds DDM and patches solver drift where it doesn't.
+
+\vspace{2pt}
+
+\noindent\textbf{Interaction.} When the Table 8.4.2.2.4 gate passes for an axis, $\gamma_v = 0$ on that axis, and the eccentric-shear term drops out regardless of $M_u$. In that case the $0.3\,M_o$ floor does not affect the DCR for that axis --- but the flexural design at the column strip still has to carry $\gamma_f \cdot M_u$, and that's still driven by $\max(\text{solver}, 0.3 M_o)$.
+
+\section*{What the toggle does NOT do}
+\begin{itemize}
+\item Does not verify the rebar detailing. Checking the box is an attestation on your part.
+\item Does not replace the solver. Solver Mu always wins when it exceeds the floor.
+\item Does not redistribute between axes. The floor is applied per column per axis.
+\item Does not apply to seismic or lateral-driven Mu --- those have their own code provisions and should be input directly as overrides.
+\end{itemize}
+
+\section*{When to leave it off}
+Turn it off (i) when reviewing results against a raw biaxial ACI \S 8.4.2.2.2 check with no DDM allowances, (ii) when the slab design is not tension-controlled or the column-strip concentration per \S 8.4.2.2.5 is not provided, or (iii) when the governing condition is non-gravity and $0.3\,M_o$ does not represent the lower bound that applies.
+
+\end{document}

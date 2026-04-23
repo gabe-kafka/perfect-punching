@@ -1,0 +1,216 @@
+<mxfile host="Electron" modified="2026-04-22T21:00:00.000Z" version="24.2.5" type="device">
+  <diagram name="twin-flow" id="twin-flow">
+    <mxGraphModel adaptiveColors="auto" dx="1400" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1120" pageHeight="1280" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="stage1bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#1A1A1A;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1040" height="240" as="geometry"/>
+        </mxCell>
+        <mxCell id="stage1header" value="&lt;b&gt;STAGE 1 · TWIN SETUP&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1A1A1A;fontColor=#FFFFFF;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1040" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="matlabel" value="MATERIAL" style="text;html=1;align=left;fontFamily=monospace;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="60" y="84" width="100" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="concrete" value="Concrete" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1A1A1A;fontColor=#FFFFFF;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="108" width="140" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="steel" value="Steel" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;fontColor=#AAAAAA;strokeColor=#CCCCCC;fontFamily=monospace;fontSize=11;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="210" y="108" width="110" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="clt" value="CLT" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;fontColor=#AAAAAA;strokeColor=#CCCCCC;fontFamily=monospace;fontSize=11;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="108" width="110" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="matnote" value="coming soon" style="text;html=1;align=center;fontFamily=monospace;fontSize=9;fontColor=#AAAAAA;" vertex="1" parent="1">
+          <mxGeometry x="210" y="168" width="230" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="syslabel" value="STRUCTURAL SYSTEM" style="text;html=1;align=left;fontFamily=monospace;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="540" y="84" width="220" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="flatplate" value="Flat plate + shear walls + cols" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1A1A1A;fontColor=#FFFFFF;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="108" width="210" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="droppanels" value="Drop panels" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;fontColor=#AAAAAA;strokeColor=#CCCCCC;fontFamily=monospace;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="760" y="108" width="150" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="pt" value="PT plate" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;fontColor=#AAAAAA;strokeColor=#CCCCCC;fontFamily=monospace;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="920" y="108" width="150" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="sysnote" value="coming soon" style="text;html=1;align=center;fontFamily=monospace;fontSize=9;fontColor=#AAAAAA;" vertex="1" parent="1">
+          <mxGeometry x="760" y="168" width="310" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="continue" value="Continue →" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0057FF;fontColor=#FFFFFF;strokeColor=#0057FF;fontFamily=monospace;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="220" width="200" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="stage2bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#1A1A1A;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="1040" height="480" as="geometry"/>
+        </mxCell>
+        <mxCell id="stage2header" value="&lt;b&gt;STAGE 2 · GEOMETRY · Digital Twin&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1A1A1A;fontColor=#FFFFFF;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="1040" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="upload" value="Upload DXF" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="70" y="370" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="loaddemo" value="Load Demo DXF" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="370" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="scan" value="scanDxfLayers()&#10;inventory + geometry stats per layer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="430" width="340" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="smartmap" value="suggestLayerMapping()&#10;smart role per layer:&#10;slab · columns · walls · ignore" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="500" width="340" height="66" as="geometry"/>
+        </mxCell>
+        <mxCell id="useralter" value="User can override role per layer&#10;(dropdown in floating card)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;fontColor=#1A1A1A;strokeColor=#D6B656;fontFamily=monospace;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="585" width="340" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="linework" value="DXF linework renders at z=0&#10;(thin gray outlines in 3D canvas)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E6F4FF;fontColor=#003366;strokeColor=#0057FF;fontFamily=monospace;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="450" y="430" width="310" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="genslab" value="Generate Slab" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="450" y="510" width="150" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="gencols" value="Generate Columns" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="610" y="510" width="170" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="genwalls" value="Generate Walls" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="790" y="510" width="150" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="extrudenote" value="each extrudes DOWN from the DXF plane" style="text;html=1;align=center;fontFamily=monospace;fontSize=10;fontColor=#666666;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="450" y="555" width="490" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="gate" value="slab + columns&#10;generated?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;fontColor=#1A1A1A;strokeColor=#D6B656;fontFamily=monospace;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="590" y="600" width="210" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="enter" value="Enter Punching Analysis →" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0057FF;fontColor=#FFFFFF;strokeColor=#0057FF;fontFamily=monospace;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="735" width="310" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.3;entryY=0;" edge="1" parent="1" source="upload" target="scan">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.7;entryY=0;" edge="1" parent="1" source="loaddemo" target="scan">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;" edge="1" parent="1" source="scan" target="smartmap">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;" edge="1" parent="1" source="smartmap" target="useralter">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" style="endArrow=classic;html=1;strokeColor=#0057FF;strokeWidth=1.5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="scan" target="linework">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" value="user picks" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;fontFamily=monospace;fontSize=9;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="useralter" target="genslab">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.2;entryY=0;" edge="1" parent="1" source="genslab" target="gate">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gencols" target="gate">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" value="optional" style="endArrow=classic;html=1;strokeColor=#666666;strokeWidth=1;dashed=1;fontFamily=monospace;fontSize=9;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.8;entryY=0;" edge="1" parent="1" source="genwalls" target="gate">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eGateYes" value="yes" style="endArrow=classic;html=1;strokeColor=#16A34A;strokeWidth=2;fontFamily=monospace;fontSize=10;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="gate" target="enter">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eGateNo" value="no — loop" style="endArrow=classic;html=1;strokeColor=#DC2626;strokeWidth=1.5;dashed=1;fontFamily=monospace;fontSize=9;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="gate" target="useralter">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="460" y="650"/>
+              <mxPoint x="460" y="610"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eStage1to2" value="" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="continue" target="stage2header">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="stage3bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#1A1A1A;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="820" width="1040" height="420" as="geometry"/>
+        </mxCell>
+        <mxCell id="stage3header" value="&lt;b&gt;STAGE 3 · PUNCHING ANALYSIS · Workflow&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1A1A1A;fontColor=#FFFFFF;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="820" width="1040" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="fea" value="Plate FEA (DKT)&#10;mesh → assemble → CG solve → recover" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="870" width="340" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="punchcheck" value="checkPunching()&#10;ACI 318 §22.6.5 + §8.4.4&#10;γf auto-boost (Table 8.4.2.2.4)&#10;0.3·Mo floor (corner columns)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="940" width="340" height="84" as="geometry"/>
+        </mxCell>
+        <mxCell id="stability" value="stability&#10;classifier" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;fontColor=#1A1A1A;strokeColor=#D6B656;fontFamily=monospace;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="450" y="870" width="200" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="stable" value="STABLE&#10;exports enabled" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#DCFCE7;fontColor=#166534;strokeColor=#16A34A;fontFamily=monospace;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="690" y="860" width="170" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="degraded" value="DEGRADED&#10;export w/ DO_NOT_SHIP stamp" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FEF3C7;fontColor=#92400E;strokeColor=#D97706;fontFamily=monospace;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="860" width="180" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="unstable" value="UNSTABLE&#10;exports blocked · red banner · per-col ! glyphs" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FEE2E2;fontColor=#991B1B;strokeColor=#DC2626;fontFamily=monospace;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="690" y="920" width="370" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="dcr" value="Per-column results table&#10;DCR · Mu,x · Mu,y · b₀ · v_u · φv_c" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="450" y="990" width="620" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="exports" value="Export Excel · Export DXF · Copy Debug" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#1A1A1A;strokeColor=#1A1A1A;fontFamily=monospace;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="450" y="1070" width="620" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="backgeom" value="← Geometry" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#666666;strokeColor=#AAAAAA;fontFamily=monospace;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1150" width="130" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="backtwin" value="← Twin" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;fontColor=#666666;strokeColor=#AAAAAA;fontFamily=monospace;fontSize=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="1150" width="130" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="backnote" value="back-nav available from Analyze header" style="text;html=1;align=left;fontFamily=monospace;fontSize=9;fontColor=#AAAAAA;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="370" y="1155" width="320" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="eEnter" value="" style="endArrow=classic;html=1;strokeColor=#0057FF;strokeWidth=2;" edge="1" parent="1" source="enter" target="stage3header">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eFeaPunch" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;" edge="1" parent="1" source="fea" target="punchcheck">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eFeaStab" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="fea" target="stability">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eStab1" value="stable" style="endArrow=classic;html=1;strokeColor=#16A34A;strokeWidth=1.5;fontFamily=monospace;fontSize=9;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" edge="1" parent="1" source="stability" target="stable">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eStab2" value="degraded" style="endArrow=classic;html=1;strokeColor=#D97706;strokeWidth=1.5;fontFamily=monospace;fontSize=9;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="stability" target="degraded">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eStab3" value="unstable" style="endArrow=classic;html=1;strokeColor=#DC2626;strokeWidth=1.5;fontFamily=monospace;fontSize=9;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.8;entryX=0;entryY=0.5;" edge="1" parent="1" source="stability" target="unstable">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ePunchDcr" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="punchcheck" target="dcr">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eDcrExp" style="endArrow=classic;html=1;strokeColor=#1A1A1A;strokeWidth=1.5;" edge="1" parent="1" source="dcr" target="exports">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eStableExp" style="endArrow=classic;html=1;strokeColor=#16A34A;strokeWidth=1;dashed=1;exitX=0.5;exitY=1;entryX=0.9;entryY=0;" edge="1" parent="1" source="stable" target="exports">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="eBack1" value="" style="endArrow=classic;html=1;strokeColor=#AAAAAA;strokeWidth=1;dashed=1;exitX=0.5;exitY=0;" edge="1" parent="1" source="backgeom" target="stage2bg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="135" y="812"/>
+              <mxPoint x="20" y="812"/>
+              <mxPoint x="20" y="560"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eBack2" value="" style="endArrow=classic;html=1;strokeColor=#AAAAAA;strokeWidth=1;dashed=1;exitX=0.5;exitY=0;" edge="1" parent="1" source="backtwin" target="stage1bg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="285" y="812"/>
+              <mxPoint x="1100" y="812"/>
+              <mxPoint x="1100" y="160"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

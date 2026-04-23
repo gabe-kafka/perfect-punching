@@ -55,13 +55,14 @@ export function buildMesh(
   // would sit outside the slab (or inside a hole) are dropped.  For edge
   // columns this cleanly leaves the patch asymmetric on the free side,
   // as it should be.
-  const colPts: Vec2[] = [];
+  // Split into two tiers so the triangulation-retry path can drop the
+  // outer refinement ring without losing the rigid-patch slaves.
+  const colPtsTight: Vec2[] = []; // 0.8x ring — patch slaves
+  const colPtsRefine: Vec2[] = []; // 1.5x ring — mesh refinement only
   for (const c of columns) {
     const [cx, cy] = c.position;
     const hx = c.c1 / 2, hy = c.c2 / 2;
-    const candidates: Vec2[] = [
-      [cx, cy],
-      // 8-point ring inside the footprint at 80%
+    const tight: Vec2[] = [
       [cx - hx*0.8, cy - hy*0.8],
       [cx + hx*0.8, cy - hy*0.8],
       [cx + hx*0.8, cy + hy*0.8],
@@ -70,7 +71,8 @@ export function buildMesh(
       [cx + hx*0.8, cy],
       [cx,          cy + hy*0.8],
       [cx - hx*0.8, cy],
-      // 8-point ring at 1.5 x footprint radius — local mesh refinement
+    ];
+    const refine: Vec2[] = [
       [cx - hx*1.5, cy - hy*1.5],
       [cx + hx*1.5, cy - hy*1.5],
       [cx + hx*1.5, cy + hy*1.5],
@@ -80,9 +82,8 @@ export function buildMesh(
       [cx,          cy + hy*1.5],
       [cx - hx*1.5, cy],
     ];
-    for (const p of candidates) {
-      if (pointInsideSlab(p, slab)) colPts.push(p);
-    }
+    for (const p of tight) if (pointInsideSlab(p, slab)) colPtsTight.push(p);
+    for (const p of refine) if (pointInsideSlab(p, slab)) colPtsRefine.push(p);
   }
 
   // ---- Wall sample points ----
@@ -132,38 +133,42 @@ export function buildMesh(
   // physical centroid; the rigid-patch lever-arm math handles that
   // correctly because levers are computed from actual mesh positions.
   const minBoundaryGap = targetEdge * 0.5;
+  const allSegs: [Vec2, Vec2][] = [];
+  for (let i = 0; i < slab.outer.length; i++) {
+    allSegs.push([slab.outer[i], slab.outer[(i + 1) % slab.outer.length]]);
+  }
+  for (const h of slab.holes ?? []) {
+    for (let i = 0; i < h.length; i++) allSegs.push([h[i], h[(i + 1) % h.length]]);
+  }
+  // Iteratively push a point away from the closest boundary segment until
+  // every segment is at least minBoundaryGap away.  Near concave corners
+  // one nudge can push the point closer to a *different* segment, so we
+  // loop (cap iterations and bail if it's not converging).
   const nudgeInward = (p: Vec2): Vec2 => {
-    const segs: [Vec2, Vec2][] = [];
-    for (let i = 0; i < slab.outer.length; i++) {
-      segs.push([slab.outer[i], slab.outer[(i + 1) % slab.outer.length]]);
+    let q = p;
+    for (let iter = 0; iter < 6; iter++) {
+      let bestDist = Infinity;
+      let bestSeg: [Vec2, Vec2] | null = null;
+      for (const s of allSegs) {
+        const d = pointToSegDist(q, s[0], s[1]);
+        if (d < bestDist) { bestDist = d; bestSeg = s; }
+      }
+      if (bestDist >= minBoundaryGap || !bestSeg) return q;
+      const [a, b] = bestSeg;
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const L = Math.hypot(dx, dy);
+      if (L < 1e-9) return q;
+      const nxA = -dy / L, nyA = dx / L;
+      const shift = minBoundaryGap - bestDist + 1e-2;
+      const candA: Vec2 = [q[0] + nxA * shift, q[1] + nyA * shift];
+      if (pointInsideSlab(candA, slab)) { q = candA; continue; }
+      const candB: Vec2 = [q[0] - nxA * shift, q[1] - nyA * shift];
+      if (pointInsideSlab(candB, slab)) { q = candB; continue; }
+      return q;
     }
-    for (const h of slab.holes ?? []) {
-      for (let i = 0; i < h.length; i++) segs.push([h[i], h[(i + 1) % h.length]]);
-    }
-    let bestDist = Infinity;
-    let bestSeg: [Vec2, Vec2] | null = null;
-    for (const s of segs) {
-      const d = pointToSegDist(p, s[0], s[1]);
-      if (d < bestDist) { bestDist = d; bestSeg = s; }
-    }
-    if (bestDist >= minBoundaryGap || !bestSeg) return p;
-    const [a, b] = bestSeg;
-    const dx = b[0] - a[0], dy = b[1] - a[1];
-    const L = Math.hypot(dx, dy);
-    if (L < 1e-9) return p;
-    const nxA = -dy / L, nyA = dx / L;
-    const shift = minBoundaryGap - bestDist + 1e-2;
-    const candA: Vec2 = [p[0] + nxA * shift, p[1] + nyA * shift];
-    if (pointInsideSlab(candA, slab)) return candA;
-    const candB: Vec2 = [p[0] - nxA * shift, p[1] - nyA * shift];
-    if (pointInsideSlab(candB, slab)) return candB;
-    return p;
+    return q;
   };
   const columnCentroids: Vec2[] = columns.map(c => nudgeInward(c.position));
-
-  const filterable = dedupe([...wallPts, ...interiorPts, ...colPts.filter(p => {
-    return !columnCentroids.some(c => Math.hypot(c[0]-p[0], c[1]-p[1]) < 1e-4);
-  })], 1e-4);
 
   const onBoundarySteiner = (p: Vec2): boolean => {
     const tol = targetEdge * 0.35;
@@ -179,32 +184,81 @@ export function buildMesh(
     }
     return false;
   };
-  const filteredSteiner = filterable.filter(p => !onBoundarySteiner(p));
+
   const centroidsUnique = dedupe(columnCentroids, 1e-4);
-  const steinerInterior = dedupe([...centroidsUnique, ...filteredSteiner], 1e-4);
+  const nearCentroid = (p: Vec2) =>
+    centroidsUnique.some(c => Math.hypot(c[0]-p[0], c[1]-p[1]) < 1e-4);
 
-  const outerDedup = dedupeAgainst(outerPts, steinerInterior, targetEdge * 0.3);
-  const holeDedup = holePts.map(h => dedupeAgainst(h, [...steinerInterior, ...outerDedup], targetEdge * 0.3));
+  const tightFiltered = dedupe(colPtsTight.filter(p => !nearCentroid(p) && !onBoundarySteiner(p)), 1e-4);
+  const refineFiltered = dedupe(colPtsRefine.filter(p => !nearCentroid(p) && !onBoundarySteiner(p)), 1e-4);
+  const bulkFiltered = dedupe([...wallPts, ...interiorPts].filter(p => !onBoundarySteiner(p)), 1e-4);
 
-  // Final dedupe between steiners and the (now-locked) boundary — but
-  // still keep column centroids even if they're close to the boundary.
-  const allBoundary = [...outerDedup, ...holeDedup.flat()];
-  const safeSteiner = [
-    ...centroidsUnique,
-    ...dedupeAgainst(filteredSteiner, allBoundary, targetEdge * 0.3),
+  // Try progressively simpler Steiner sets until poly2tri succeeds.
+  // poly2tri's finalization can throw (null triangle -> getConstrainedEdgeCW)
+  // when a Steiner lands essentially on a constrained edge.  The column
+  // centroid is whitelisted (it MUST be in the mesh as the rigid-patch
+  // master) and is the hardest to drop — so centroids are always included
+  // and the refine/tight/bulk tiers are stripped in order on retry.
+  const tiers: Vec2[][] = [
+    [...bulkFiltered, ...tightFiltered, ...refineFiltered], // full
+    [...bulkFiltered, ...tightFiltered],                    // drop refine ring
+    [...bulkFiltered],                                      // drop tight ring too
+    [],                                                     // centroids + boundary only
   ];
 
-  // ---- poly2tri ----
-  const outerContour = outerDedup.map(([x, y]) => new poly2tri.Point(x, y));
-  const swctx = new poly2tri.SweepContext(outerContour);
-  for (const h of holeDedup) {
-    swctx.addHole(h.map(([x, y]) => new poly2tri.Point(x, y)));
+  let triangles: ReturnType<InstanceType<typeof poly2tri.SweepContext>["getTriangles"]> | null = null;
+  let lastErr: unknown = null;
+  let winningTier = -1;
+  let winningDropped = 0;
+  let winningLabel = "";
+  // Boundary is sacred — we never drop boundary vertices, because doing
+  // so mutates the slab polygon (dropping a corner vertex can create
+  // self-intersecting or collinear edges that poly2tri rejects with a
+  // null-triangle crash in finalizationPolygon).  Instead, we only drop
+  // Steiners that conflict with the boundary, and we trust that the
+  // centroid nudge + onBoundarySteiner filter already kept the interior
+  // Steiner set far enough away to be safe.
+  const outerKept = outerPts;
+  const holeKept = holePts;
+  const allBoundary = [...outerKept, ...holeKept.flat()];
+
+  for (let attempt = 0; attempt < tiers.length; attempt++) {
+    const extras = tiers[attempt];
+    const safeSteiner = [
+      ...centroidsUnique,
+      ...dedupeAgainst(extras, allBoundary, targetEdge * 0.3),
+    ];
+
+    try {
+      const outerContour = outerKept.map(([x, y]) => new poly2tri.Point(x, y));
+      const swctx = new poly2tri.SweepContext(outerContour);
+      for (const h of holeKept) {
+        swctx.addHole(h.map(([x, y]) => new poly2tri.Point(x, y)));
+      }
+      for (const p of safeSteiner) {
+        swctx.addPoint(new poly2tri.Point(p[0], p[1]));
+      }
+      swctx.triangulate();
+      triangles = swctx.getTriangles();
+      const tierName = ["full", "no-refine-ring", "no-tight-ring", "centroids-only"][attempt] ?? `tier ${attempt}`;
+      winningTier = attempt;
+      winningLabel = tierName;
+      winningDropped = tiers[0].length - extras.length;
+      // eslint-disable-next-line no-console
+      console.log(`[mesher] poly2tri ok at tier ${attempt} (${tierName}, ${extras.length} extras kept)`);
+      break;
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      const label = ["full", "no-refine-ring", "no-tight-ring", "centroids-only"][attempt] ?? `tier ${attempt}`;
+      // eslint-disable-next-line no-console
+      console.warn(`[mesher] tier ${attempt} (${label}, ${extras.length} extras) failed: ${msg}`);
+    }
   }
-  for (const p of safeSteiner) {
-    swctx.addPoint(new poly2tri.Point(p[0], p[1]));
+  if (!triangles) {
+    const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
+    throw new Error(`mesher: poly2tri failed on all retries (${msg})`);
   }
-  swctx.triangulate();
-  const triangles = swctx.getTriangles();
 
   // ---- Collect unique nodes + build elements ----
   const nodeMap = new Map<string, number>();
@@ -250,18 +304,41 @@ export function buildMesh(
     columnNodes.set(columns[i].id, nearestNode(nodes, target));
   }
 
-  // ---- Wall nodes: all nodes close to any wall segment ----
+  // ---- Wall nodes ----
+  // Open walls: pin any node within a band of the centerline.
+  // Closed walls (footprints): pin every node INSIDE the footprint —
+  // without this, a thick closed wall has unpinned interior nodes and
+  // the FEA treats them as compliant, inflating Vu at nearby columns.
   const wallNodes = new Set<number>();
   for (const w of walls) {
     const pts = w.points;
     const n = pts.length;
-    const last = w.closed ? n : n - 1;
-    for (let i = 0; i < last; i++) {
-      const a = pts[i], b = pts[(i + 1) % n];
+    if (w.closed && n >= 3) {
       for (let ni = 0; ni < nodes.length; ni++) {
         const p: Vec2 = [nodes[ni].x, nodes[ni].y];
-        if (pointToSegDist(p, a, b) < targetEdge * 0.35) {
+        if (pointInRing(p, pts)) {
           wallNodes.add(ni);
+          continue;
+        }
+        // Also include the thin band immediately outside so a polyline
+        // drawn at the slab-wall interface still pins its edge nodes.
+        for (let i = 0; i < n; i++) {
+          const a = pts[i], b = pts[(i + 1) % n];
+          if (pointToSegDist(p, a, b) < targetEdge * 0.35) {
+            wallNodes.add(ni);
+            break;
+          }
+        }
+      }
+    } else {
+      const last = w.closed ? n : n - 1;
+      for (let i = 0; i < last; i++) {
+        const a = pts[i], b = pts[(i + 1) % n];
+        for (let ni = 0; ni < nodes.length; ni++) {
+          const p: Vec2 = [nodes[ni].x, nodes[ni].y];
+          if (pointToSegDist(p, a, b) < targetEdge * 0.35) {
+            wallNodes.add(ni);
+          }
         }
       }
     }
@@ -270,7 +347,17 @@ export function buildMesh(
   // Exclude column nodes from wall set so each column is only pinned at its own column node
   for (const ci of columnNodes.values()) wallNodes.delete(ci);
 
-  return { nodes, elements, columnNodes, wallNodes };
+  return {
+    nodes,
+    elements,
+    columnNodes,
+    wallNodes,
+    quality: {
+      tierUsed: winningTier,
+      tierLabel: winningLabel,
+      droppedSteiners: winningDropped,
+    },
+  };
 }
 
 // ---- Helpers ----

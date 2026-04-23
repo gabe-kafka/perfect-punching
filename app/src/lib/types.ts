@@ -16,6 +16,8 @@ export interface Slab {
   polygon: Polygon;
   /** Floor label this slab belongs to (e.g., "12", "ROOF"). */
   floor?: string;
+  /** DXF layer this slab was ingested from. */
+  layer?: string;
 }
 
 export type ColumnType = "interior" | "edge" | "corner";
@@ -33,6 +35,8 @@ export interface Column {
   tributaryArea?: number;
   /** Floor this column belongs to. */
   floor?: string;
+  /** DXF layer this column was ingested from. */
+  layer?: string;
 }
 
 export interface Wall {
@@ -40,6 +44,8 @@ export interface Wall {
   /** Polyline points. */
   points: Vec2[];
   closed?: boolean;
+  /** DXF layer this wall was ingested from. */
+  layer?: string;
 }
 
 /** Per-project material/load inputs. */
@@ -47,10 +53,14 @@ export interface ProjectInputs {
   fcPsi: number;     // f'_c specified concrete strength
   hIn: number;       // slab thickness
   dIn: number;       // effective depth (h - cover)
-  deadPsf: number;   // dead load (excludes self-weight; we add)
+  /** Superimposed dead load (psf). Slab self-weight is added automatically from hIn × concreteUnitWeightPcf. */
+  deadPsf: number;
   livePsf: number;   // live load
-  defaultC1: number; // default column dim if DXF lacks size
-  defaultC2: number;
+  /** Concrete unit weight (pcf) used to compute slab self-weight. Default 150 (normal-weight). Set 0 to disable self-weight. */
+  concreteUnitWeightPcf?: number;
+  /** Deprecated: column dims now come from ingested footprints (POLYLINE bboxes) or a 12" placeholder for POINT-based columns. Kept for back-compat only. */
+  defaultC1?: number;
+  defaultC2?: number;
   /** Phi reduction factor (default 0.75). */
   phi: number;
   /**
@@ -67,6 +77,14 @@ export interface ProjectInputs {
   concreteNu?: number;
   /** FEA mesh target edge length (in). If omitted, derived from d and column spacing. */
   meshTargetEdgeIn?: number;
+  /**
+   * Combined ACI-consistent design assumption: (1) γf auto-boosts per
+   * Table 8.4.2.2.4 where the direct-shear gate passes, and (2) the
+   * 0.3·Mo DDM floor is enforced on |Mu| per column per axis.  User
+   * attests column-strip rebar is tension-controlled per §8.4.2.2.5
+   * when this is enabled.  Defaults to `true`.
+   */
+  applyAciDesignAssumptions?: boolean;
 }
 
 export interface ColumnResult {
@@ -90,4 +108,12 @@ export interface ColumnResult {
   vuMaxPsi: number;
   phiVcPsi: number;
   dcr: number;
+  /** 0.3·Mo floor applied to |mu2|? Diagnostic only — the stored mu2 already reflects the floor. */
+  mu2FloorApplied?: boolean;
+  /** 0.3·Mo floor applied to |mu3|? */
+  mu3FloorApplied?: boolean;
+  /** 0.3·Mo floor value used for mu2 (lb-in). */
+  mu2FloorValue?: number;
+  /** 0.3·Mo floor value used for mu3 (lb-in). */
+  mu3FloorValue?: number;
 }

@@ -33,6 +33,21 @@ export default function App() {
             Hanson &amp; Hanson eccentric-shear decomposition
           </h1>
         </div>
+        <nav className="mt-3 md:mt-4 flex gap-0 text-[10px] uppercase tracking-[0.18em]">
+          <div
+            className="px-3 py-1.5 border border-ink bg-ink text-paper cursor-default"
+            aria-current="page"
+          >
+            Digital Twin Creator
+          </div>
+          <a
+            href="https://perfect-punching-app.vercel.app/"
+            className="px-3 py-1.5 border border-ink border-l-0 hover:bg-subtle"
+            title="Full DXF-driven plate FEA punching check"
+          >
+            Punching Analysis →
+          </a>
+        </nav>
       </header>
 
       <section className="space-y-2">

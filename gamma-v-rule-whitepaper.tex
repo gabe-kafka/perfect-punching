@@ -1,0 +1,68 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.55in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{array}
+\setlist{nosep, leftmargin=1.2em}
+\titlespacing*{\section}{0pt}{5pt}{2pt}
+\titleformat{\section}{\normalsize\bfseries}{}{0pt}{}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}{\large\bfseries Modified $\gamma_f$ for Two-Way Slabs --- ACI 318-19 Table 8.4.2.2.4}\end{center}
+
+\section*{Why this rule exists}
+At a column the unbalanced slab moment $M_{sc}$ is split: a fraction $\gamma_f M_{sc}$ is transferred by flexure across the effective slab-strip width $c_2 + 3h$, and the remainder $\gamma_v M_{sc}$ ($\gamma_v = 1-\gamma_f$) is transferred by eccentricity of shear on the critical section. The baseline split (\S 8.4.2.2.2) is
+$\gamma_f = 1 / \bigl(1 + \tfrac{2}{3}\sqrt{b_1/b_2}\bigr)$, which puts ${\sim}40\%$ of the moment into the eccentric-shear term. For slabs designed so the column-strip flexural reinforcement is tension-controlled and the direct shear is modest, tests (Hanson \& Hanson 1968 and successors) show more of the moment can be resisted by flexure. Table 8.4.2.2.4 codifies that relief --- $\gamma_f$ may be increased, with a hard cap of $1.0$ (all moment by flexure, $\gamma_v = 0$).
+
+\section*{The gate (Table 8.4.2.2.4)}
+
+Both conditions (a) and (b) must hold on the axis in question:
+
+\begin{tabular}{|l|l|c|c|c|}
+\hline
+\textbf{Column} & \textbf{Span direction} & $v_{uv} \leq$ & $\varepsilon_t \geq$ & $\gamma_{f,\max}$ \\
+\hline
+Corner          & either                   & $0.5\,\phi v_c$   & $\varepsilon_{ty} + 0.003$ & $1.0$ \\
+Edge            & perpendicular to edge    & $0.75\,\phi v_c$  & $\varepsilon_{ty} + 0.003$ & $1.0$ \\
+Edge            & parallel to edge         & $0.4\,\phi v_c$   & $\varepsilon_{ty} + 0.008$ & $\dfrac{1.25}{1 + \tfrac{2}{3}\sqrt{b_1/b_2}} \leq 1.0$ \\
+Interior        & either                   & $0.4\,\phi v_c$   & $\varepsilon_{ty} + 0.008$ & $\dfrac{1.25}{1 + \tfrac{2}{3}\sqrt{b_1/b_2}} \leq 1.0$ \\
+\hline
+\end{tabular}
+
+\vspace{3pt}
+\noindent\textbf{(a) Direct shear:} $v_{uv} = V_u / (b_0 d)$ must not exceed the tabulated fraction of $\phi v_c$. $V_u$ is the column reaction; $v_{uv}$ excludes the eccentric-shear contribution.
+
+\vspace{2pt}
+\noindent\textbf{(b) Ductile flexure:} the net tensile strain in the extreme slab reinforcement within the transfer strip must meet the tabulated minimum. Note the two thresholds: rows that grant $\gamma_{f,\max} = 1.0$ (corner, edge perpendicular) use $\varepsilon_t \geq \varepsilon_{ty} + 0.003$; rows that grant only the $1.25\times$ baseline boost (edge parallel, interior) require the stricter $\varepsilon_{ty} + 0.008$. For Grade 60 reinforcement these evaluate to $\approx 0.00507$ and $\approx 0.01007$ respectively. It is a \textit{reinforcement-design} check, not a detailing one, and cannot be verified from the slab geometry alone.
+
+\section*{Implicit slab-reinforcement requirement}
+The table only applies if the column-strip flexural reinforcement can actually carry the increased $\gamma_f M_{sc}$. Per \S 8.4.2.2.2, this fraction of the moment is resisted by the reinforcement placed within the effective transfer width
+\[
+b_{\text{slab}} = c_2 + 3h.
+\]
+Concentrating rebar over the column (smaller bar spacing or added bars in the column strip) is the usual means. \S 8.4.2.2.5 requires this concentration when the modified $\gamma_f$ is used.
+
+\section*{What this app does when the toggle is on}
+Per column and per moment axis we:
+\begin{enumerate}
+\item Compute $v_{uv} = V_u / (b_0 d)$ and $\phi v_c$ with the critical-section geometry for that column type (truncated faces for edge / corner).
+\item Select the applicable row of the table based on column classification and --- for edge columns --- which axis is parallel to the free edge.
+\item If $v_{uv}$ passes the gate, use $\gamma_{f,\max}$; otherwise fall back to the baseline $\gamma_f$.
+\item Compute $\gamma_v = 1 - \gamma_f$ and apply to $M_{sc}$ in the eccentric-shear sum.
+\end{enumerate}
+
+\textbf{What the app does not check (user's responsibility):}
+\begin{itemize}
+\item $\varepsilon_t \geq \varepsilon_{ty} + 0.003$. The slab's flexural reinforcement must be ductile over the column strip. Toggling this option is an attestation that the reinforcement design meets this limit.
+\item Concentrated rebar across $b_{\text{slab}} = c_2 + 3h$ per \S 8.4.2.2.5.
+\end{itemize}
+
+\section*{When to leave it off}
+Leave the toggle off when (i) drawings don't call out concentrated column-strip reinforcement, (ii) the flexural design is capacity-controlled (i.e.\ likely not tension-controlled), or (iii) the column sees elevated direct shear already --- the gate $v_{uv} \leq k\,\phi v_c$ will not pass and the app will silently fall back to the baseline $\gamma_f$ anyway, but the default-off state is the safer position for peer review.
+
+\end{document}

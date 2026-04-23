@@ -23,6 +23,15 @@ export interface FEAElement {
   area: number;
 }
 
+export interface FEAMeshQuality {
+  /** poly2tri retry tier that succeeded. 0 = full Steiner set, 3 = boundary+centroids only. */
+  tierUsed: number;
+  /** Human-readable label of the tier that won. */
+  tierLabel: string;
+  /** Count of Steiner points dropped relative to tier 0's full set. */
+  droppedSteiners: number;
+}
+
 export interface FEAMesh {
   nodes: FEANode[];
   elements: FEAElement[];
@@ -30,6 +39,8 @@ export interface FEAMesh {
   columnNodes: Map<string, number>;
   /** Set of node indices that are wall-supported (pinned in w). */
   wallNodes: Set<number>;
+  /** Quality info from the triangulation retry ladder. */
+  quality: FEAMeshQuality;
 }
 
 export interface FEAMaterial {

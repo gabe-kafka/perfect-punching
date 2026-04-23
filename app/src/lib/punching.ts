@@ -43,10 +43,52 @@ export function phiVc(
   );
 }
 
-/** γf, γv per ACI 318 eq 8.4.2.3.2. b1 is in the moment-span direction. */
+/** Baseline γf per ACI 318-19 Eq. 8.4.2.2.2. b1 is in the moment-span direction. */
 function gammas(b1: number, b2: number) {
   const gf = 1 / (1 + (2 / 3) * Math.sqrt(b1 / b2));
   return { gf, gv: 1 - gf };
+}
+
+/**
+ * γf per Table 8.4.2.2.4 when the direct-shear gate passes; otherwise
+ * falls back to the baseline.  Returns `{gv, modified}` where `modified`
+ * is true if the table's modified γf was applied.
+ *
+ *   v_uv   = V_u / A_c   (direct shear stress only, no moment)
+ *   phiVc  = design capacity (already includes φ)
+ *   parallelToEdge: for edge columns, whether THIS axis's moment span
+ *                   runs parallel to the free edge.  Ignored for
+ *                   interior/corner (single row for each).
+ */
+function gammaVForAxis(
+  b1: number, b2: number,
+  colType: ColumnType,
+  parallelToEdge: boolean,
+  vuv: number, phiVc: number,
+  useTable: boolean,
+): { gv: number; modified: boolean } {
+  const baselineGf = 1 / (1 + (2 / 3) * Math.sqrt(b1 / b2));
+  if (!useTable) return { gv: 1 - baselineGf, modified: false };
+
+  let thresholdFrac: number;
+  let gfMax: number;
+  if (colType === "corner") {
+    thresholdFrac = 0.5; gfMax = 1.0;
+  } else if (colType === "edge") {
+    if (parallelToEdge) {
+      thresholdFrac = 0.4;
+      gfMax = Math.min(1.25 * baselineGf, 1.0);
+    } else {
+      thresholdFrac = 0.75; gfMax = 1.0;
+    }
+  } else {
+    thresholdFrac = 0.4;
+    gfMax = Math.min(1.25 * baselineGf, 1.0);
+  }
+  if (vuv <= thresholdFrac * phiVc) {
+    return { gv: 1 - gfMax, modified: true };
+  }
+  return { gv: 1 - baselineGf, modified: false };
 }
 
 /**
@@ -150,6 +192,13 @@ function pointToSegDist(p: Vec2, a: Vec2, b: Vec2): number {
   return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
 }
 
+export interface MoFloor {
+  /** Floor on |mu2| (bending in y), lb-in. */
+  mu2Floor: number;
+  /** Floor on |mu3| (bending in x), lb-in. */
+  mu3Floor: number;
+}
+
 export function checkPunching(
   c: Column,
   p: ProjectInputs,
@@ -157,6 +206,7 @@ export function checkPunching(
   mu3_lb_in?: number,
   slab?: Polygon,
   vuOverride_lb?: number,
+  moFloor?: MoFloor,
 ): ColumnResult {
   const type: ColumnType = c.type ?? "interior";
   const trib_in2 = c.tributaryArea ?? 0;
@@ -167,66 +217,118 @@ export function checkPunching(
   // redistribution.
   const vu = vuOverride_lb ?? (wu_psi * trib_in2);
 
-  // Base critical-section rectangle (before edge/corner truncation)
-  const b_x = c.c1 + p.dIn;  // X-direction
-  const b_y = c.c2 + p.dIn;  // Y-direction
+  // Critical-section face lengths per ACI 318 §22.6.4.
+  //
+  // An interior column extends d/2 past both sides of each column face
+  // (face length = c + d).  At a free slab edge the extension exists
+  // only on the interior side (face length = c + d/2).  So:
+  //   interior:  bx = c1 + d,    by = c2 + d
+  //   edge:      one direction truncated (c + d/2), the other full
+  //   corner:    both directions truncated (c + d/2)
+  //
+  // These face lengths also feed Jc — jcEdge() and jcCorner() expect
+  // the TRUNCATED lengths, not the full interior-column extensions.
+  const bx_full  = c.c1 + p.dIn;
+  const by_full  = c.c2 + p.dIn;
+  const bx_trunc = c.c1 + p.dIn / 2;
+  const by_trunc = c.c2 + p.dIn / 2;
 
-  // Truncated perimeter per column type
-  let b0 = 2 * (b_x + b_y);
-  if (type === "edge")   b0 = b_x + 2 * b_y;
-  if (type === "corner") b0 = b_x + b_y;
-
-  // Biaxial moments; scalar fallback when caller supplies neither
+  // Biaxial moments; scalar fallback when caller supplies neither.
   let mu2 = mu2_lb_in ?? 0;
   let mu3 = mu3_lb_in ?? 0;
   if (mu2_lb_in === undefined && mu3_lb_in === undefined) {
     const fallback = scalarMomentFallback(vu);
-    if (b_x >= b_y) mu3 = fallback;
-    else            mu2 = fallback;
+    if (bx_full >= by_full) mu3 = fallback;
+    else                    mu2 = fallback;
   }
 
-  // Determine free-edge axis for edge/corner centroid shift
+  // 0.3·Mo lower-bound (DDM historical minimum) — prevents solver Mu
+  // from silently under-predicting. Preserves sign from solver when
+  // present, positive otherwise.
+  let mu2FloorApplied = false;
+  let mu3FloorApplied = false;
+  if (moFloor) {
+    if (Math.abs(mu2) < moFloor.mu2Floor) {
+      mu2 = (mu2 < 0 ? -1 : 1) * moFloor.mu2Floor;
+      mu2FloorApplied = true;
+    }
+    if (Math.abs(mu3) < moFloor.mu3Floor) {
+      mu3 = (mu3 < 0 ? -1 : 1) * moFloor.mu3Floor;
+      mu3FloorApplied = true;
+    }
+  }
+
+  // Determine free-edge axis for edge/corner centroid shift.
   const freeAxis = (type === "edge" || type === "corner")
-    ? (freeEdgeAxis(c, slab) ?? (b_x >= b_y ? "y" : "x"))
+    ? (freeEdgeAxis(c, slab) ?? (bx_full >= by_full ? "y" : "x"))
     : null;
 
-  // Per-axis Jc and lever arm — choose formula based on truncation direction
-  // For Mu2 (about X, bending in Y-direction): b1 = b_y, b2 = b_x
+  // Effective face lengths after edge/corner truncation.  Used for b0,
+  // γv, and as arguments into jcEdge/jcCorner.
+  let bx_eff: number, by_eff: number, b0: number;
+  if (type === "interior") {
+    bx_eff = bx_full;  by_eff = by_full;
+    b0 = 2 * (bx_full + by_full);
+  } else if (type === "corner") {
+    bx_eff = bx_trunc; by_eff = by_trunc;
+    b0 = bx_trunc + by_trunc;
+  } else if (freeAxis === "x") {
+    // Free edge perpendicular to X → x-direction faces truncated.
+    // Critical section: 2 truncated x-faces + 1 full y-face.
+    bx_eff = bx_trunc; by_eff = by_full;
+    b0 = by_full + 2 * bx_trunc;
+  } else {
+    // Free edge perpendicular to Y → y-direction faces truncated.
+    bx_eff = bx_full;  by_eff = by_trunc;
+    b0 = bx_full + 2 * by_trunc;
+  }
+
+  // Per-axis Jc and lever arm.  Pass the truncated face lengths into
+  // jcEdge/jcCorner — those formulas take the actual face dims, not
+  // the interior-extension lengths.
+  //   Mu2 is about X, bending span in Y → "b1" for Mu2 is by_eff.
+  //   Mu3 is about Y, bending span in X → "b1" for Mu3 is bx_eff.
   let jc2: number, c2_lever: number;
-  // For Mu3 (about Y, bending in X-direction): b1 = b_x, b2 = b_y
   let jc3: number, c3_lever: number;
 
   if (type === "interior") {
-    jc2 = jcInterior(b_y, b_x, p.dIn);  c2_lever = b_y / 2;
-    jc3 = jcInterior(b_x, b_y, p.dIn);  c3_lever = b_x / 2;
+    jc2 = jcInterior(by_eff, bx_eff, p.dIn);  c2_lever = by_eff / 2;
+    jc3 = jcInterior(bx_eff, by_eff, p.dIn);  c3_lever = bx_eff / 2;
   } else if (type === "edge") {
-    // Only the axis whose moment span is perpendicular to the free edge
-    // sees a centroid shift. The other axis remains interior-symmetric.
     if (freeAxis === "x") {
-      // Free edge perpendicular to X → b_x direction is truncated.
-      // Mu3 bending is along X → b1_for_Mu3 = b_x is truncated → shift applies.
-      const e3 = jcEdge(b_x, b_y, p.dIn);  jc3 = e3.jc; c3_lever = e3.c;
-      jc2 = jcInterior(b_y, b_x, p.dIn);   c2_lever = b_y / 2;
+      // x-axis faces truncated → Mu3 (bending in x) sees the shift.
+      const e3 = jcEdge(bx_eff, by_eff, p.dIn);  jc3 = e3.jc; c3_lever = e3.c;
+      jc2 = jcInterior(by_eff, bx_eff, p.dIn);   c2_lever = by_eff / 2;
     } else {
-      // Free edge perpendicular to Y → b_y truncated → Mu2 axis shifts.
-      const e2 = jcEdge(b_y, b_x, p.dIn);  jc2 = e2.jc; c2_lever = e2.c;
-      jc3 = jcInterior(b_x, b_y, p.dIn);   c3_lever = b_x / 2;
+      // y-axis faces truncated → Mu2 (bending in y) sees the shift.
+      const e2 = jcEdge(by_eff, bx_eff, p.dIn);  jc2 = e2.jc; c2_lever = e2.c;
+      jc3 = jcInterior(bx_eff, by_eff, p.dIn);   c3_lever = bx_eff / 2;
     }
   } else {
     // Corner: both axes truncated.
-    const e3 = jcCorner(b_x, b_y, p.dIn);  jc3 = e3.jc; c3_lever = e3.c;
-    const e2 = jcCorner(b_y, b_x, p.dIn);  jc2 = e2.jc; c2_lever = e2.c;
+    const e3 = jcCorner(bx_eff, by_eff, p.dIn);  jc3 = e3.jc; c3_lever = e3.c;
+    const e2 = jcCorner(by_eff, bx_eff, p.dIn);  jc2 = e2.jc; c2_lever = e2.c;
   }
 
-  const gv2 = gammas(b_y, b_x).gv;
-  const gv3 = gammas(b_x, b_y).gv;
-
   const direct = vu / (b0 * p.dIn);
+  const phiVc_ = phiVc(c.c1, c.c2, b0, p.dIn, type, p.fcPsi, p.phi, p.fcsFactor ?? 1.0);
+
+  // Table 8.4.2.2.4 gate uses DIRECT shear stress v_uv (no moments).
+  // For edge columns, the "parallel to edge" bound applies to the axis
+  // whose moment span runs along the free edge:
+  //   freeAxis "x" (edge ⟂ x, edge runs in y): Mu3 span=x ⟂ edge; Mu2 span=y ∥ edge
+  //   freeAxis "y" (edge ⟂ y, edge runs in x): Mu3 span=x ∥ edge; Mu2 span=y ⟂ edge
+  const useTable = p.applyAciDesignAssumptions ?? true;
+  const mu2ParallelToEdge = type === "edge" && freeAxis === "x";
+  const mu3ParallelToEdge = type === "edge" && freeAxis === "y";
+  const gv2Res = gammaVForAxis(by_eff, bx_eff, type, mu2ParallelToEdge, direct, phiVc_, useTable);
+  const gv3Res = gammaVForAxis(bx_eff, by_eff, type, mu3ParallelToEdge, direct, phiVc_, useTable);
+  const gv2 = gv2Res.gv;
+  const gv3 = gv3Res.gv;
+
   const ecc2 = (gv2 * Math.abs(mu2) * c2_lever) / jc2;
   const ecc3 = (gv3 * Math.abs(mu3) * c3_lever) / jc3;
   const vuMax = direct + ecc2 + ecc3;
-
-  const phiVc_ = phiVc(c.c1, c.c2, b0, p.dIn, type, p.fcPsi, p.phi, p.fcsFactor ?? 1.0);
 
   const muResultant = Math.hypot(mu2, mu3);
 
@@ -245,6 +347,10 @@ export function checkPunching(
     vuMaxPsi: vuMax,
     phiVcPsi: phiVc_,
     dcr: vuMax / phiVc_,
+    mu2FloorApplied,
+    mu3FloorApplied,
+    mu2FloorValue: moFloor?.mu2Floor,
+    mu3FloorValue: moFloor?.mu3Floor,
   };
 }
 

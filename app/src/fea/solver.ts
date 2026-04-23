@@ -12,6 +12,10 @@ export interface CGOptions {
   tolerance?: number;   // relative residual ||r||/||F||
   maxIter?: number;     // default 5 * n
   warmStart?: Float64Array;
+  /** Callback invoked every `progressEveryN` iters with (iter, relResidual, maxIter). Awaited so the caller can yield to the UI. */
+  onProgress?: (iter: number, relResidual: number, maxIter: number) => Promise<void> | void;
+  /** How often to emit progress. Default 50 iters. */
+  progressEveryN?: number;
 }
 
 export interface CGResult {
@@ -42,10 +46,11 @@ function matvec(K: CSR, x: Float64Array, y: Float64Array): void {
   }
 }
 
-export function solveCG(K: CSR, F: Float64Array, opts: CGOptions = {}): CGResult {
+export async function solveCG(K: CSR, F: Float64Array, opts: CGOptions = {}): Promise<CGResult> {
   const n = K.n;
   const tol = opts.tolerance ?? 1e-10;
   const maxIter = opts.maxIter ?? Math.max(2000, 5 * n);
+  const progressEveryN = opts.progressEveryN ?? 50;
 
   // Jacobi preconditioner = diag(K)^-1
   const diag = new Float64Array(n);
@@ -109,6 +114,10 @@ export function solveCG(K: CSR, F: Float64Array, opts: CGOptions = {}): CGResult
     const beta = rz_new / rz;
     for (let i = 0; i < n; i++) p[i] = z[i] + beta * p[i];
     rz = rz_new;
+
+    if (opts.onProgress && iter % progressEveryN === 0) {
+      await opts.onProgress(iter, rnorm / Fnorm, maxIter);
+    }
   }
 
   return { u, iterations: iter, residualNorm: rnorm / Fnorm, converged };
