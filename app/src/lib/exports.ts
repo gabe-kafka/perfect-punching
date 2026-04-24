@@ -2,7 +2,11 @@ import * as XLSX from "xlsx";
 import Drawing from "dxf-writer";
 import type { Column, ColumnResult, Polygon } from "./types";
 
-export function exportExcel(results: ColumnResult[], columns: Column[]): Blob {
+export function exportExcel(
+  results: ColumnResult[],
+  columns: Column[],
+  stability?: "stable" | "degraded" | "unstable",
+): Blob {
   const colById = new Map(columns.map((c) => [c.id, c]));
   const rows = results.map((r) => {
     const c = colById.get(r.columnId);
@@ -12,7 +16,9 @@ export function exportExcel(results: ColumnResult[], columns: Column[]): Blob {
       Y_in: c?.position[1]?.toFixed(2) ?? "",
       Type: r.type,
       "P_u (kip)": (r.vu / 1000).toFixed(2),
-      "M_u (kip-ft)": (r.mu / 12000).toFixed(2),
+      "M_u,x (kip-ft)": (r.mu2 / 12000).toFixed(2),
+      "M_u,y (kip-ft)": (r.mu3 / 12000).toFixed(2),
+      "M_u,res (kip-ft)": (r.mu / 12000).toFixed(2),
       "Tributary (ft^2)": (r.tributaryAreaIn2 / 144).toFixed(1),
       "b_0 (in)": r.b0.toFixed(1),
       "J_c (in^4)": r.jc.toExponential(2),
@@ -24,6 +30,18 @@ export function exportExcel(results: ColumnResult[], columns: Column[]): Blob {
   });
 
   const sheet = XLSX.utils.json_to_sheet(rows);
+  if (stability === "degraded" || stability === "unstable") {
+    XLSX.utils.sheet_add_aoa(
+      sheet,
+      [[
+        `DO_NOT_SHIP — FEA stability was ${stability.toUpperCase()} at export time (${new Date().toISOString()})`,
+      ]],
+      { origin: "A1" },
+    );
+    const range = XLSX.utils.decode_range(sheet["!ref"] ?? "A1");
+    range.e.r += 1;
+    sheet["!ref"] = XLSX.utils.encode_range(range);
+  }
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, "PUNCHING");
   const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });

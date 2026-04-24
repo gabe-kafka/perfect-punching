@@ -1,11 +1,12 @@
 import type { ColumnResult } from "../lib/types";
 
 export function ResultsTable({
-  results, selected, onSelect,
+  results, selected, onSelect, unstableColumnIds,
 }: {
   results: ColumnResult[];
   selected: string | null;
   onSelect: (id: string | null) => void;
+  unstableColumnIds?: Set<string>;
 }) {
   return (
     <div className="border border-ink">
@@ -24,7 +25,8 @@ export function ResultsTable({
               <Th>id</Th>
               <Th>type</Th>
               <Th right>P_u (k)</Th>
-              <Th right>M_u (k-ft)</Th>
+              <Th right>M_u,x (k-ft)</Th>
+              <Th right>M_u,y (k-ft)</Th>
               <Th right>b_0 (in)</Th>
               <Th right>v_u (psi)</Th>
               <Th right>φv_c (psi)</Th>
@@ -32,7 +34,9 @@ export function ResultsTable({
             </tr>
           </thead>
           <tbody>
-            {results.map((r) => (
+            {results.map((r) => {
+              const isUnstable = unstableColumnIds?.has(r.columnId) ?? false;
+              return (
               <tr
                 key={r.columnId}
                 onClick={() => onSelect(r.columnId === selected ? null : r.columnId)}
@@ -41,10 +45,16 @@ export function ResultsTable({
                   (r.columnId === selected ? "bg-subtle" : "hover:bg-subtle/40")
                 }
               >
-                <Td>{r.columnId}</Td>
+                <Td>
+                  {isUnstable && (
+                    <span className="text-accentRed font-bold mr-1" title="No rigid-patch slaves — Mu unreliable">!</span>
+                  )}
+                  {r.columnId}
+                </Td>
                 <Td>{r.type}</Td>
                 <Td right>{(r.vu / 1000).toFixed(1)}</Td>
-                <Td right>{(r.mu / 12000).toFixed(1)}</Td>
+                <Td right>{(r.mu2 / 12000).toFixed(1)}</Td>
+                <Td right>{(r.mu3 / 12000).toFixed(1)}</Td>
                 <Td right>{r.b0.toFixed(0)}</Td>
                 <Td right>{r.vuMaxPsi.toFixed(0)}</Td>
                 <Td right>{r.phiVcPsi.toFixed(0)}</Td>
@@ -62,7 +72,7 @@ export function ResultsTable({
                   </span>
                 </Td>
               </tr>
-            ))}
+            );})}
           </tbody>
         </table>
       </div>

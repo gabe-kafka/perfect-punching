@@ -7,7 +7,7 @@
  * many edges of the slab outer ring lie within `edgeBand` of the
  * centroid using a swept-perpendicular test on each segment).
  */
-import { pointToRingDistance } from "./geom";
+import { pointToRingDistance, pointToSegmentDistance } from "./geom";
 import type { Column, ColumnType, Polygon, Vec2 } from "./types";
 
 export function classifyColumns(slab: Polygon, columns: Column[], edgeBand = 36): void {
@@ -47,17 +47,6 @@ function classifyOne(p: Vec2, slab: Polygon, edgeBand: number): ColumnType {
     }
   }
   return "edge";
-}
-
-function pointToSegmentDistance(p: Vec2, a: Vec2, b: Vec2): number {
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const len2 = dx * dx + dy * dy;
-  let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (len2 || 1);
-  t = Math.max(0, Math.min(1, t));
-  const cx = a[0] + t * dx;
-  const cy = a[1] + t * dy;
-  return Math.hypot(p[0] - cx, p[1] - cy);
 }
 
 function angleDiff(a: number, b: number): number {
